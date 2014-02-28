@@ -1,6 +1,7 @@
 #include "Tree.h"
+using std::vector;
 
-void Tree::setValues(int x,int y, int start[], int en[], double len[], double tip[], double tip2[])
+void Tree::setValues(int &x, int &y, int start[], int en[], double len[], double tip[], double tip2[])
 {
 	edge_count 	= x;
 	tip_count 	= y;
@@ -21,19 +22,19 @@ void Tree::setValues(int x,int y, int start[], int en[], double len[], double ti
 	}
 }
 
-void Tree::simulation(double a, double sigma, double dt)
+void Tree::simulation(double &a, double &sigma, double &dt)
 {
 	double s = sigma * sqrt(dt);
-	std::vector<double> 	run_val (1,0);		// values of running lines
-	std::vector<double> 	run_val2 (1,0);		// values of running lines
-	std::vector<int> 	node;			// nodes due to begin running
-	std::vector<double>	val;			// value at each of 'node'
-	std::vector<double>	val2;			// value at each of 'node'
+	vector<double> 	run_val (1,0);		// values of running lines
+	vector<double> 	run_val2 (1,0);		// values of running lines
+	vector<int> 	node;				// nodes due to begin running
+	vector<double>	val;				// value at each of 'node'
+	vector<double>	val2;				// value at each of 'node'
 
 	simSeg(a, s, dt, node, val, val2, run_val, run_val2);
 }
 
-void Tree::simSeg(double a, double s, double dt, std::vector<int> node, std::vector<double> val, std::vector<double> val2, std::vector<double> run_val, std::vector<double> run_val2)
+void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<double> &val, vector<double> &val2, vector<double> &run_val, vector<double> &run_val2)
 {
 
 	bool run[edge_count];
@@ -62,6 +63,7 @@ void Tree::simSeg(double a, double s, double dt, std::vector<int> node, std::vec
 		int l = run_val.size();
 		int count = ( time / dt );
 		Sim segment;
+		//segment.setSeg(run_val.data(), run_val2.data(), &l);
 		segment.setSeg(run_val.data(), run_val2.data(), &l);
 		segment.runSim( &a, &s, &count, &dt);
 		segment.getSeg(run_val.data(), run_val2.data(), &l);

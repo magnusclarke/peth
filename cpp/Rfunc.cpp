@@ -1,7 +1,7 @@
 #include "Sim.h"	
 #include "Tree.h"
 
-extern "C" void genTree(const int *ec,  const int *nc, double *a, int *start, int *end, double *len, double *sigma, double *dt, double *tip, double *tip2)
+extern "C" void genTree(int *ec, int *nc, double *a, int *start, int *end, double *len, double *sigma, double *dt, double *tip, double *tip2)
 {
 	Tree phy;
 	
