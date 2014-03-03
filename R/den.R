@@ -5,9 +5,10 @@
 library("ape")
 library("parallel")
 source("simPlot.R")
-dyn.load("../cpp/Rfunc.so")
+if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
+else									dyn.load("../cpp/Rfunc.so")
 
-cores		<- detectCores()
+cores	<- detectCores()
 dt		<- 0.005
 
 # random ultrametric tree
