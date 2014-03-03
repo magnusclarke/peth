@@ -3,19 +3,20 @@
 # modified 6.2.14
 
 library("ape")
+library("TESS")
 library("parallel")
 source("simPlot.R")
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
-else									dyn.load("../cpp/Rfunc.so")
+if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 
 cores	<- detectCores()
 dt		<- 0.005
 
 # random ultrametric tree
-randUMT	<- function(n)
+randUMT	<- function(nt, lambda=1, mu=0)
 {
-	tree		<- chronopl(rtree(n), lambda=0.0)	
-	return(tree)
+	tree 	<- sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	
+	return( tree[[1]] )
 }
 
 # simulate tip trait data: 2 traits
