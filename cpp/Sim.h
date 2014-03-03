@@ -1,8 +1,9 @@
 #ifndef __RUNSIM_H__
-
 #define __RUNSIM_H__
 
-#include "boost/random.hpp"	
+#include <vector>
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/normal_distribution.hpp"
 
 class Sim
 {			
