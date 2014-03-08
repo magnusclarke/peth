@@ -7,7 +7,7 @@ library("TESS")
 library("parallel")
 source("simPlot.R")
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
-if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
+if(.Platform$pkgType == "source")	dyn.load("../cpp/Rfunc.so")
 
 cores	<- detectCores()
 dt		<- 0.005
@@ -22,6 +22,9 @@ randUMT	<- function(nt, lambda=1, mu=0)
 # simulate tip trait data: 2 traits
 genTree	<- function(tree, a=0, sigma=1) 
 {
+	# Require tree$edge to be a matrix of integers not doubles. TESS gives doubles.
+	tree$edge <- apply(tree$edge, c(1,2), function(x) x <- as.integer(x))	
+
 	tip_count      <- length( tree$tip.label )
 	st             <- tree$edge[,1]
 	end            <- tree$edge[,2]
