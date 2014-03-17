@@ -133,7 +133,7 @@ model_lik   <- function(tree, data, reps=1e3, e, a=0, sigma, min=0, max=20)
 			dif 		<- get_dif(tree, data, a, sigma, force=TRUE)
 			if(dif < e)	x <- 1
 			else		x <- 0	
-		}, mc.cores=cores) 	
+			}, mc.cores=cores) 	
 
 	count <- sum(as.integer(x))
 	lik 	<- count / reps
@@ -141,7 +141,7 @@ model_lik   <- function(tree, data, reps=1e3, e, a=0, sigma, min=0, max=20)
 }
 
 # Test AIC values for density model vs BM model
-AIC	<- function(tree, data, reps=1e3, min=0, max=20) 
+LRT	<- function(tree, data, reps=1e3, min=0, max=20) 
 {
 	brown	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, a=0)
 	full	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA)
@@ -154,8 +154,10 @@ AIC	<- function(tree, data, reps=1e3, min=0, max=20)
 	lik_BM  <- model_lik(tree, data, e=e, reps=10*reps, a=0, sigma=Es)
 	lik_den	<- model_lik(tree, data, e=e, reps=10*reps, a=Ea, sigma=Ea_s)
 
-	AIC_BM		<- 2*1 - 2 * log(lik_BM)
-	AIC_density	<- 2*2 - 2 * log(lik_den)
-	relative_lik	<- exp( (AIC_BM - AIC_density) / 2)
-	return( data.frame(lik_BM, lik_den, AIC_BM, AIC_density, relative_lik) )
+	D	<- -2 * log( lik_BM / lik_den )
+
+	#AIC_BM		<- 2*1 - 2 * log(lik_BM)
+	#AIC_density	<- 2*2 - 2 * log(lik_den)
+	#relative_lik	<- exp( (AIC_BM - AIC_density) / 2)
+	return( data.frame(lik_BM, lik_den, D) )
 }
