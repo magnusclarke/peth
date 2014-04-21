@@ -19,7 +19,7 @@ randUMT	<- function(nt, lambda=1, mu=0)
 }
 
 # simulate tip trait data: 2 traits
-genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1) 
+genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1, kernel="CE") 
 {
 	dt 	<- 0.01 * dt
 
@@ -32,8 +32,11 @@ genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1)
 	length         <- tree$edge.length
 	edge_count     <- length(st)
 
+	if(kernel=="BM") k=0
+	if(kernel=="CE") k=1
+
 	result	<- .C 	("genTree", ec=edge_count, nc = tip_count,
-			nt = as.integer(nTraits),
+			nt = as.integer(nTraits), kernel=as.integer(k),
 			a=as.double(a), start=st, end, len=as.double(length),
 			sigma=as.double(sigma), dt=as.double(dt), 
 			tip=rep(0.0, edge_count*nTraits))
