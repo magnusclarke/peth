@@ -51,7 +51,7 @@ void Sim::denSim(vector<vector<double> > run_vals, double *a, double *s, double 
 	}
 }
 
-void Sim::runSim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
+void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
 {
 	len = *l;
 
@@ -77,4 +77,9 @@ void Sim::runSim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, d
 		// Density-dependent evolution	
 		if(*a != 0)		denSim(run_vals, a, s, dt);
 	}
+}
+
+void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
+{
+
 }
