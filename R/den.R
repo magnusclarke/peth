@@ -19,7 +19,7 @@ randUMT	<- function(nt, lambda=1, mu=0)
 }
 
 # simulate tip trait data: 2 traits
-genTree	<- function(tree, a=0, sigma=1, dt=1) 
+genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1) 
 {
 	dt 	<- 0.01 * dt
 
@@ -33,14 +33,16 @@ genTree	<- function(tree, a=0, sigma=1, dt=1)
 	edge_count     <- length(st)
 
 	result	<- .C 	("genTree", ec=edge_count, nc = tip_count,
+			nt = as.integer(nTraits),
 			a=as.double(a), start=st, end, len=as.double(length),
 			sigma=as.double(sigma), dt=as.double(dt), 
-			tip=rep(0.0, edge_count), tip2=rep(0.0, edge_count))
+			tip=rep(0.0, edge_count*nTraits))
 
-	trait1	<- result$tip      [ which(end <= tip_count) ]
-	trait2	<- result$tip2     [ which(end <= tip_count) ]
+
+	traits <- matrix(result$tip, ncol=nTraits)
+	traits <- traits[ which(end <= tip_count) ,]
 	
-	return( data.frame(trait1, trait2 ) )
+	return( data.frame(traits) )
 }
 
 # generate vcv-matrix of simulated trees. a=0 is BM

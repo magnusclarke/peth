@@ -5,18 +5,14 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/normal_distribution.hpp"
 
+using std::vector;
+
 class Sim
 {			
-	int len;
-	std::vector<double> seg;
-	std::vector<double> seg2;
-
-	void denSim(double *a, double *s, double *dt);
-	
+	int len, Ntraits;
+	void denSim(vector<vector<double> > run_vals, double *a, double *s, double *dt);
 public:
-	void setSeg(double *dat, double *dat2, int *l);
-	void getSeg(double *dat, double *dat2, int *l);
-	void runSim(double *a, double *s, int *count, double *dt);
+	void runSim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt);
 };
 
 #endif

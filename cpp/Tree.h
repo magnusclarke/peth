@@ -7,17 +7,16 @@ using std::vector;
 
 class Tree 
 {
-	int			edge_count, tip_count, root;
+	int		edge_count, tip_count, Ntraits, root;
 	std::vector<int>	st, end;
 	std::vector<double>	length;
 
-	void	simSeg(double&, double&, double&, vector<int>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&);
+	void	simSeg(double&, double&, double&, vector<int>&, vector<vector<double> >&, vector<vector<double> >&);
 
 public:
-	std::vector<double>	value;
-	std::vector<double>	value2;
-	
-	void 	setValues (int&, int&, int[], int[], double[], double[], double[]);
+	std::vector<std::vector<double> > vals;
+
+	void 	setValues (int&, int&, int&, int[], int[], double[], double[]);
 	void 	simulation (double&, double&, double&);
 };
 

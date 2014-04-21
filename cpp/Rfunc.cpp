@@ -1,18 +1,19 @@
 #include "Sim.h"	
 #include "Tree.h"
 
-extern "C" void genTree(int *ec, int *nc, double *a, int *start, int *end, double *len, double *sigma, double *dt, double *tip, double *tip2)
+extern "C" void genTree(int *ec, int *nc, int *nt, double *a, int *start, int *end, double *len, double *sigma, double *dt, double *tip)
 {
 	Tree phy;
 	
-	phy.setValues (*ec, *nc, start, end, len, tip, tip2);
-	
+	phy.setValues (*ec, *nc, *nt, start, end, len, tip);
+
 	phy.simulation(*a, *sigma, *dt);
 
-	for(int i = 0; i < *ec; ++i)
+	for (int j = 0; j < *nt; ++j)
 	{
-		tip[i] = phy.value[i];
-		tip2[i]= phy.value2[i];
-	} 
-
+		for(int i = 0; i < *ec; ++i)
+		{
+			tip[i + j*(*ec)] = phy.vals[j][i];
+		} 
+	}
 }

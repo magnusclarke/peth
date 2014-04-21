@@ -1,21 +1,23 @@
 #include "Tree.h"
 using std::vector;
 
-void Tree::setValues(int &x, int &y, int start[], int en[], double len[], double tip[], double tip2[])
+void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[])
 {
 	edge_count 	= x;
 	tip_count 	= y;
+	Ntraits 	= nt;
 	root		= start[0];
-	value.assign	(x, 0);
-	value2.assign	(x, 0);
 	st.assign	(x, 0);
 	end.assign	(x, 0);
 	length.assign	(x, 0);
 
+	std::vector<double> vec_start;
+	vec_start.assign (x, 0);	
+
+	vals.assign (Ntraits, vec_start);	
+
 	for(int i = 0; i < x; i++) 
 	{
-		value[i]	= tip[i];
-		value2[i]	= tip2[i];
 		st[i]		= start[i];
 		end[i]		= en[i];
 		length[i]	= len[i];
@@ -25,55 +27,64 @@ void Tree::setValues(int &x, int &y, int start[], int en[], double len[], double
 void Tree::simulation(double &a, double &sigma, double &dt)
 {
 	double s = sigma * sqrt(dt);
-	vector<double> 	run_val (1,0);		// values of running lines
-	vector<double> 	run_val2 (1,0);		// values of running lines
-	vector<int> 	node;				// nodes due to begin running
-	vector<double>	val;				// value at each of 'node'
-	vector<double>	val2;				// value at each of 'node'
 
-	simSeg(a, s, dt, node, val, val2, run_val, run_val2);
+	vector<vector<double> > run_vals;	// values of running lines
+	vector<double> 	single_value (1,0);
+	run_vals.assign(Ntraits, single_value);			
+
+	vector<int> 	node;				// nodes due to begin running
+
+	vector<vector<double> > nodeVal;
+	vector<double> single_nodeVal;
+	nodeVal.assign(Ntraits, single_nodeVal);
+
+	simSeg(a, s, dt, node, nodeVal, run_vals);
 }
 
-void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<double> &val, vector<double> &val2, vector<double> &run_val, vector<double> &run_val2)
+void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
 
 	bool run[edge_count];
 	for(int i = 0; i < edge_count; i++) 
 	{
 		if(st[i] == root)	run[i] = true;
- 		else 			run[i] = false;
+ 		else 				run[i] = false;
 	}
 
-	while(run_val.empty() == false){
+	while(run_vals[0].empty() == false){
 
-		run_val.clear();
-		run_val2.clear();
+		for (int i = 0; i < Ntraits; ++i)
+		{
+			run_vals[i].clear();
+		}
 
 		// set run_val and time
 		double time = 1e308;
 		for(int i=0; i<edge_count; i++){
 			if (run[i] == true) {
-				run_val.push_back( value[i] );
-				run_val2.push_back( value2[i] );
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					run_vals[j].push_back( vals[j][i] );
+				}
 				if (length[i] < time)	time = length[i];
 			}
 		}
 
-		// runSim on lines where run=TRUE
-		int l = run_val.size();
+		// // runSim on lines where run=TRUE
+		int l = run_vals[0].size();
 		int count = ( time / dt );
+
 		Sim segment;
-		//segment.setSeg(run_val.data(), run_val2.data(), &l);
-		segment.setSeg(run_val.data(), run_val2.data(), &l);
-		segment.runSim( &a, &s, &count, &dt);
-		segment.getSeg(run_val.data(), run_val2.data(), &l);
+		segment.runSim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
 
 		int z = 0;
 		for(int i=0; i < edge_count; i++){
 			if (run[i] == true)
 			{
-				value[i] = run_val[z];
-				value2[i] = run_val2[z];
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					vals[j][i] = run_vals[j][z];
+				}
 				length[i] -= time;
 				z++;
 			}
@@ -83,8 +94,10 @@ void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<do
 		{
 			if (length[i] <= 0 && run[i] == true) {
 				node.push_back( end[i] );
-				val.push_back( value[i] );
-				val2.push_back( value2[i] );
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					nodeVal[j].push_back( vals[j][i] );
+				}
 			}
 		}
 
@@ -92,8 +105,10 @@ void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<do
 		{
 			for(unsigned int j=0; j < node.size(); j++){
 				if(st[i] == node[j]) {
-					value[i] = val[j];
-					value2[i] = val2[j];
+					for (int k = 0; k < Ntraits; ++k)
+					{
+						vals[k][i] = nodeVal[k][j];
+					}
 					run[i] = true;
 				}
 			}
@@ -106,8 +121,10 @@ void Tree::simSeg(double &a, double &s, double &dt, vector<int> &node, vector<do
 			}
 		}
 
-		node.clear();
-		val.clear();
-		val2.clear();
+		node.clear(); 
+		for (int i = 0; i < Ntraits; ++i)
+		{
+			nodeVal[i].clear();
+		}
 	}
 }
