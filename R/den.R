@@ -58,22 +58,21 @@ simVCV	<- function(tree, a=0, sigma=1, reps=1e3, dt=1)
 # obtain difference between data and a single simulated tree (for ABC not user)
 get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1) 
 {
-	new				<- genTree(tree, a, sigma, dt)
+	ntips	<- length(data[,1])
+	nTraits	<- length(data[1,])
+	new		<- genTree(tree, a, sigma, dt, nTraits=nTraits)		# simulate dataset
+
 	if(a != 0 | force == TRUE)
 	{
-		Dgap 	<- rep(0, length(data$trait1))
-		Ngap 	<- rep(0, length(data$trait1))
-		# Works, but slows down ABC a lot
-		for (i in 1:length(data$trait1)) {
-			difs		<- sqrt( (data$trait1[i] - data$trait1)^2 + (data$trait2[i] - data$trait2)^2 )
-			difs[which(difs==0)]	<- 1e100
-			Dgap[i]		<- min(difs)
-		}
-		for (i in 1:length(new$trait1)) {
-			difs		<- sqrt( (new$trait1[i] - new$trait1)^2 + (new$trait2[i] - new$trait2)^2 )
-			difs[which(difs==0)]	<- 1e100
-			Ngap[i]		<- min(difs)
-		}
+		difs					<- as.matrix(dist(data))	# euclidian distance
+		difs[which(difs==0)]	<- 1e100					# ignore matrix diagonal
+		Dgap					<- apply(difs, 1, min)	
+
+		difs					<- as.matrix(dist(new))		# euclidian distance
+		difs[which(difs==0)]	<- 1e100					# ignore matrix diagonal
+		Ngap					<- apply(difs, 1, min)
+
+		# Use summary statistics: mean and sd of gaps between neighbours
 		return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
 	} else {
 		Dtrait_var		<- var(data)	

@@ -27,7 +27,6 @@ void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 			run_vals[j][i] += s2_time * distribution(generator);
 		}
 	} 		
-
 }
 
 void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
@@ -58,7 +57,7 @@ void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 	}
 }
 
-void Sim::denSim(vector<vector<double> > run_vals, double *a, double *s, double *dt)
+void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double *dt)
 {
 	std::vector<double> dists (Ntraits, 0);
 	std::vector<double> sqDists (Ntraits, 0);
@@ -95,11 +94,13 @@ void Sim::denSim(vector<vector<double> > run_vals, double *a, double *s, double 
 			double g = dta * (0.5-pn);
 			
 			// Change in trait values, scaled by sigma
-			// sumDist!=0 is NOT checked... it's very slow to do so...
-			for (int k = 0; k < Ntraits; ++k)
+			if(sumDist != 0)
 			{
-				run_vals[k][i] += s_sqrtDT*g*(dists[i]/sumDist);
-				run_vals[k][j] -= s_sqrtDT*g*(dists[i]/sumDist);
+				for (int k = 0; k < Ntraits; ++k)
+				{
+					run_vals[k][i] += s_sqrtDT*g*(dists[k]/sumDist);
+					run_vals[k][j] -= s_sqrtDT*g*(dists[k]/sumDist);
+				}
 			}
 		}
 	}
