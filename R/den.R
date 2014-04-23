@@ -130,6 +130,45 @@ ABC	<- function	(tree, data, min=0, max=20, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 	}
 }
 
+dir_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, trait_sd=1) 
+{
+	ntips	<- length(data[,1])
+	nTraits	<- length(data[1,])
+	new		<- genTree(tree, a, sigma, dt, nTraits=nTraits)	
+
+	tip_prob <- 1:ntips
+	for (i in 1:ntips)
+	{
+		# get probability of a single tip trait value
+		tip_prob[i]	<- dnorm(data[i,], mean=new[i,], sd=trait_sd)
+	}
+
+	# full probability is produict of all tip probabilities
+	return( prod(tip_prob) )
+}
+
+dirABC	<- function	(tree, data, min=0, max=20, reps=1e3, e=NA, dt=1, factor=1e12)
+{
+	use 	<- rep(FALSE, reps)
+	sig		<- runif(reps, min, max)
+	atry	<- runif(reps, min, max)
+
+	use <- mcmapply(function(use, atry, sig)	
+		{
+			dif <- dir_dif(tree, data, atry, sig, dt=dt, trait_sd=trait_sd)
+			rn 	<- runif(1)						# random number between 0 and 1
+			if((factor*dif) > rn)	use	<- TRUE	# so if dif=0.1/factor, probability of use=TRUE is 0.1
+			else			use	<- FALSE
+		}, use, atry, sig, mc.cores=cores)
+
+	sigmaEst 	<- mean( sig[which(use == TRUE)] )
+	aEst 		<- mean( atry[which(use == TRUE)] )
+	hits 		<- 100*( length(which(use == TRUE)) / length(use) )	
+
+	return( data.frame(aEst, sigmaEst, hits) )
+}
+
+
 # Get liklihood for given a, sigma. Called by AIC
 model_lik   <- function(tree, data, reps=1e3, e, a=0, sigma, min=0, max=20, dt=1)
 {
