@@ -11,13 +11,13 @@ class Tree
 	std::vector<int>	st, end;
 	std::vector<double>	length;
 
-	void	simSeg(double&, double&, double&, int&, vector<int>&, vector<vector<double> >&, vector<vector<double> >&);
+	void	simSeg(double&, double&, double&, double&, int&, vector<int>&, vector<vector<double> >&, vector<vector<double> >&);
 
 public:
 	std::vector<std::vector<double> > vals;
 
 	void 	setValues (int&, int&, int&, int[], int[], double[], double[]);
-	void 	simulation (double&, double&, double&, int&);
+	void 	simulation (double&, double&, double&, double&, int&);
 };
 
 #endif

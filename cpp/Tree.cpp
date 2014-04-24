@@ -24,7 +24,7 @@ void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[
 	}
 }
 
-void Tree::simulation(double &a, double &sigma, double &dt, int &kernel)
+void Tree::simulation(double &a, double &sigma, double &dt, double &lim, int &kernel)
 {
 	double s = sigma * sqrt(dt);
 
@@ -38,10 +38,10 @@ void Tree::simulation(double &a, double &sigma, double &dt, int &kernel)
 	vector<double> single_nodeVal;
 	nodeVal.assign(Ntraits, single_nodeVal);
 
-	simSeg(a, s, dt, kernel, node, nodeVal, run_vals);
+	simSeg(a, s, dt, lim, kernel, node, nodeVal, run_vals);
 }
 
-void Tree::simSeg(double &a, double &s, double &dt, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
+void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
 
 	bool run[edge_count];
@@ -79,6 +79,8 @@ void Tree::simSeg(double &a, double &s, double &dt, int &kernel, vector<int> &no
 			segment.BMsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
 		} else if(kernel==1) {
 			segment.CEsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
+		} else if(kernel==2) {
+			segment.LIMsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt, &lim);
 		}
 
 		int z = 0;

@@ -52,7 +52,33 @@ void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 			}
 		} 		
 		// Density-dependent evolution 
-		// Adding this ( for a!=0 ) roughly triples runtime
+		// Adding this ( for a!=0 ) roughly doubles runtime
+		if(*a != 0)		denSim(run_vals, a, s, dt);
+	}
+}
+
+void Sim::LIMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *lim)
+{
+	len = *l;
+	Ntraits = *nt;	
+
+	//double lim = 2;				// max size of deviation from zero.
+
+	boost::mt19937_64 generator; 			
+	generator.seed(rdtsc());  
+	boost::normal_distribution<double> distribution;
+
+	for(int j = 0; j < *count; j++) 
+	{
+		for(int i=0; i < len; i++)
+		{
+			for (int k = 0; k < Ntraits; ++k)
+			{
+				run_vals[k][i] += (*s) * distribution(generator);
+				if(run_vals[k][i] > *lim)	run_vals[k][i] = *lim;
+				if(run_vals[k][i] < -*lim)	run_vals[k][i] = -*lim;
+			}
+		} 		
 		if(*a != 0)		denSim(run_vals, a, s, dt);
 	}
 }

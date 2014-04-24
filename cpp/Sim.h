@@ -14,6 +14,8 @@ class Sim
 public:
 	void CEsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt);
 	void BMsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt);
+	void LIMsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *lim);
 };
+
 
 #endif
