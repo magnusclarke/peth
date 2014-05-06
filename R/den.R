@@ -5,7 +5,6 @@
 library("ape")
 library("TESS")
 library("parallel")
-library("ks")
 source("simPlot.R")
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
@@ -94,7 +93,7 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 		else		atry	<- rep(a, reps)
 
 	# Setting e empirically
-	treps	<- reps/1e1
+	treps	<- as.integer( sqrt(reps) )		#reps/1e1
 	if(is.na(a) & is.na(sigma)) 
 		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt) )
 	else if(is.double(a))
@@ -118,6 +117,14 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 	dat[,1]	<- Usig
 	dat[,2]	<- Uatry
 
+	return(dat)
+}
+
+
+LRT	<- function(dat, min=0, max=10, plot=FALSE) 
+{
+	library("ks")
+
 	k 	<- kde(dat, xmin=c(0, 0), xmax=c(max,max))
 	k0	<- kde(dat, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
 
@@ -134,7 +141,7 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 
 	if(plot==TRUE)	plot(k, "persp")
 
-	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT))
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
 dir_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, trait_sd=1) 
@@ -193,23 +200,23 @@ model_lik   <- function(tree, data, reps=1e3, e, a=0, sigma, min=0, max=20, dt=1
 }
 
 # Test AIC values for density model vs BM model
-LRT	<- function(tree, data, reps=1e3, min=0, max=20, dt=1) 
-{
-	brown	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, a=0, dt=dt)
-	full	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, dt=dt)
-	Ea		<- full$aEst
-	Ea_s	<- full$sigmaEst
-	Es		<- brown$sigmaEst
+# LRT	<- function(tree, data, reps=1e3, min=0, max=20, dt=1) 
+# {
+# 	brown	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, a=0, dt=dt)
+# 	full	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, dt=dt)
+# 	Ea		<- full$aEst
+# 	Ea_s	<- full$sigmaEst
+# 	Es		<- brown$sigmaEst
 
-	e		<- full$e
+# 	e		<- full$e
 
-	lik_BM  <- model_lik(tree, data, e=e, reps=10*reps, a=0, sigma=Es, dt=dt)
-	lik_den	<- model_lik(tree, data, e=e, reps=10*reps, a=Ea, sigma=Ea_s, dt=dt)
+# 	lik_BM  <- model_lik(tree, data, e=e, reps=10*reps, a=0, sigma=Es, dt=dt)
+# 	lik_den	<- model_lik(tree, data, e=e, reps=10*reps, a=Ea, sigma=Ea_s, dt=dt)
 
-	D		<- -2 * log( lik_BM / lik_den )
+# 	D		<- -2 * log( lik_BM / lik_den )
 
-	#AIC_BM		<- 2*1 - 2 * log(lik_BM)
-	#AIC_density	<- 2*2 - 2 * log(lik_den)
-	#relative_lik	<- exp( (AIC_BM - AIC_density) / 2)
-	return( data.frame(lik_BM, lik_den, D) )
-}
+# 	#AIC_BM		<- 2*1 - 2 * log(lik_BM)
+# 	#AIC_density	<- 2*2 - 2 * log(lik_den)
+# 	#relative_lik	<- exp( (AIC_BM - AIC_density) / 2)
+# 	return( data.frame(lik_BM, lik_den, D) )
+# }
