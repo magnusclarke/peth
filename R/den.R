@@ -5,6 +5,7 @@
 library("ape")
 library("TESS")
 library("parallel")
+library("ks")
 source("simPlot.R")
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
@@ -84,7 +85,7 @@ get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1)
 }
 
 # Fit model to tree and tip data
-ABC	<- function	(tree, data, min=0, max=20, reps=1e3, e=NA, a=NA, sigma=NA, dt=1)
+ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, plot=FALSE)
 {
 	use 	<- rep(FALSE, reps)
 	if(is.na(sigma)) 	sig	<- runif(reps, min, max)
@@ -108,27 +109,32 @@ ABC	<- function	(tree, data, min=0, max=20, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 		{
 			dif <- get_dif(tree, data, atry, sig, dt=dt)
 			if(dif < ep)	use	<- TRUE
-			else		use	<- FALSE
+			else			use	<- FALSE
 		}, use, atry, sig, mc.cores=cores)
 
-	sigmaEst 	<- mean( sig[which(use == TRUE)] )
-	aEst 		<- mean( atry[which(use == TRUE)] )
+	Usig	<- sig[which(use == TRUE)]
+	Uatry	<- atry[which(use == TRUE)]
+	dat 	<- matrix(ncol=2, nrow=length(Usig))
+	dat[,1]	<- Usig
+	dat[,2]	<- Uatry
 
-	hits 	<- 100*( length(which(use == TRUE)) / length(use) )	
-	hits 	<- paste(hits, "%")
+	k 	<- kde(dat, xmin=c(0, 0), xmax=c(max,max))
+	k0	<- kde(dat, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
 
-	if(!is.na(aEst))
-	{
-		if(is.na(a) & is.na(sigma))	
-			return( data.frame(aEst, sigmaEst, hits, ep) )
-		else if(is.double(a))	
-			return( data.frame(sigmaEst, hits, ep) )
-		else if(is.double(sigma))
-			return( data.frame(aEst, hits, ep) )
-	} else {
-		x <- ABC(tree, data, min=min, max=max, reps=reps, e=e, a=a, sigma=sigma, dt=dt)
-		return(x)
-	}
+	k_max_index 	<- which(k$estimate == max(k$estimate), arr.ind = TRUE)
+	H1_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
+	H1_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+
+	k0_max_index	<- which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+	H0_lik 			<- k0$estimate[k0_max_index[1], k0_max_index[2]]
+	H0_est 			<- c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	LRT				<- -2 * log( H0_lik / H1_lik )
+
+	if(plot==TRUE)	plot(k, "persp")
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT))
 }
 
 dir_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, trait_sd=1) 
@@ -148,6 +154,7 @@ dir_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, trait_sd=1)
 	return( prod(tip_prob) )
 }
 
+# This still needs to be switched to use ks package; or, to be integrated into ABC as an option.
 dirABC	<- function	(tree, data, min=0, max=20, reps=1e3, e=NA, dt=1, factor=1e12)
 {
 	use 	<- rep(FALSE, reps)
@@ -190,16 +197,16 @@ LRT	<- function(tree, data, reps=1e3, min=0, max=20, dt=1)
 {
 	brown	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, a=0, dt=dt)
 	full	<- ABC(tree, data, min=min, max=max, reps=reps, e=NA, dt=dt)
-	Ea	<- full$aEst
+	Ea		<- full$aEst
 	Ea_s	<- full$sigmaEst
-	Es	<- brown$sigmaEst
+	Es		<- brown$sigmaEst
 
-	e	<- full$e
+	e		<- full$e
 
 	lik_BM  <- model_lik(tree, data, e=e, reps=10*reps, a=0, sigma=Es, dt=dt)
 	lik_den	<- model_lik(tree, data, e=e, reps=10*reps, a=Ea, sigma=Ea_s, dt=dt)
 
-	D	<- -2 * log( lik_BM / lik_den )
+	D		<- -2 * log( lik_BM / lik_den )
 
 	#AIC_BM		<- 2*1 - 2 * log(lik_BM)
 	#AIC_density	<- 2*2 - 2 * log(lik_den)
