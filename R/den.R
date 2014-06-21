@@ -57,11 +57,11 @@ simVCV	<- function(tree, a=0, sigma=1, reps=1e3, dt=1)
 }
 
 # obtain difference between data and a single simulated tree (for ABC not user)
-get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1) 
+get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0) 
 {
 	ntips	<- length(data[,1])
 	nTraits	<- length(data[1,])
-	new		<- genTree(tree, a, sigma, dt, nTraits=nTraits)		# simulate dataset
+	new		<- genTree(tree, a, sigma, dt, nTraits=nTraits, kernel=kernel, lim=lim)		# simulate dataset
 
 	if(a != 0 | force == TRUE)
 	{
@@ -84,7 +84,7 @@ get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1)
 }
 
 # Fit model to tree and tip data
-ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, plot=FALSE)
+ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel="CE", lim=0, plot=FALSE)
 {
 	use 	<- rep(FALSE, reps)
 	if(is.na(sigma)) 	sig	<- runif(reps, min, max)
@@ -95,11 +95,11 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 	# Setting e empirically
 	treps	<- as.integer( sqrt(reps) )		#reps/1e1
 	if(is.na(a) & is.na(sigma)) 
-		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt) )
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
 	else if(is.double(a))
-		test 	<- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt) )
+		test 	<- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
 	else if(is.double(sigma))
-		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt) )
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel, lim=lim) )
 
 	if(is.na(e))	ep	<- min(test)
 	else		ep	<- e * min(test)
