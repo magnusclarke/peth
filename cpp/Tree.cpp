@@ -39,7 +39,117 @@ void Tree::simulation(double &a, double &sigma, double &dt, double &lim, int &ke
 	nodeVal.assign(Ntraits, single_nodeVal);
 
 	simSeg(a, s, dt, lim, kernel, node, nodeVal, run_vals);
+
+	// NF simulation
+	if(kernel==3){
+		simNF(a, s, dt, lim, kernel, node, nodeVal, run_vals);		
+	}
 }
+
+void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
+{
+	//vals[0][3] = 5;		
+
+	
+	bool run[edge_count];
+	for(int i = 0; i < edge_count; i++) 
+	{
+		if(st[i] == root)	run[i] = true;
+ 		else 				run[i] = false;
+	}
+
+	// While there are branches to simulate
+	while(run_vals[0].empty() == false){
+
+		// run_vals is the working copy of species being simulated
+		// clear it ready for a new simulation.
+		for (int i = 0; i < Ntraits; ++i)
+		{
+			run_vals[i].clear();
+		}
+
+		// 'vals' are the trait values on the branches.
+		// Copy the vals of running branches to run_vals
+		// & Set 'time' to the time until the next node. 
+		double time = 1e308;
+		for(int i=0; i<edge_count; i++){
+			if (run[i] == true) {
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					run_vals[j].push_back( vals[j][i] );
+				}
+				if (length[i] < time)	time = length[i];
+			}
+		}
+
+		// Simulate evolution on the run_vals
+		// for (int i = 0; i < run_vals[0].size(); ++i)
+		// {
+		// 	run_vals[0][i] += rand() % 100;;
+		// }
+
+		// Copy the run_vals back to the corresponding vals.
+		// Reduce the running branch lengths by 'time'
+		int z = 0;
+		for(int i=0; i < edge_count; i++){
+			if (run[i] == true)
+			{
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					vals[j][i] = run_vals[j][z];
+				}
+				length[i] -= time;
+				z++;
+			}
+		}
+
+		// If a branch has ended, add its end-node to vector 'node'
+		// & add its vals value to nodeVal
+		for (int i = 0; i < edge_count; i++)
+		{
+			if (length[i] <= 0 && run[i] == true) {
+				node.push_back( end[i] );
+				for (int j = 0; j < Ntraits; ++j)
+				{
+					nodeVal[j].push_back( vals[j][i] );
+				}
+			}
+		}
+
+		// Branches that start at a node in 'node' are due to begin simulation.
+		// Copy nodeVals to the corresponding new branches.
+		// And set those branches running.
+		for(int i=0; i < edge_count; i++)
+		{
+			for(unsigned int j=0; j < node.size(); j++){
+				if(st[i] == node[j]) {
+					for (int k = 0; k < Ntraits; ++k)
+					{
+						vals[k][i] += 5;	//nodeVal[k][j];
+					}
+					run[i] = true;
+				}
+			}
+		}
+
+		// Stop branches running when they reach zero length.
+		for (int i = 0; i < edge_count; i++)
+		{
+			if (length[i] <= 0){
+				run[i] = false;
+			}
+		}
+
+		// Clear the 'working' list of evolving nodes and values.
+		node.clear(); 
+		for (int i = 0; i < Ntraits; ++i)
+		{
+			nodeVal[i].clear();
+		}
+	}
+	
+}
+
 
 void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
@@ -81,7 +191,7 @@ void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, ve
 			segment.CEsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
 		} else if(kernel==2) {
 			segment.LIMsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt, &lim);
-		}
+		} 		
 
 		int z = 0;
 		for(int i=0; i < edge_count; i++){

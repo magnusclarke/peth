@@ -35,6 +35,7 @@ genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1, kernel="CE", lim=0)
 	if(kernel=="BM")	k=0
 	if(kernel=="CE")	k=1
 	if(kernel=="LIM")	k=2
+	if(kernel=="NF")	k=3
 
 	result	<- .C 	("genTree", ec=edge_count, nc = tip_count,
 			nt = as.integer(nTraits), kernel=as.integer(k),
