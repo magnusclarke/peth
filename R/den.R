@@ -66,12 +66,12 @@ get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0)
 	if(a != 0 | force == TRUE)
 	{
 		difs					<- as.matrix(dist(data))	# euclidian distance
-		difs[which(difs==0)]	<- 1e100					# ignore matrix diagonal
-		Dgap					<- apply(difs, 1, min)	
+		difs[which(difs==0)]	<- NA						# ignore matrix diagonal
+		Dgap					<- apply(difs, 1, min, na.rm=T)	
 
 		difs					<- as.matrix(dist(new))		# euclidian distance
-		difs[which(difs==0)]	<- 1e100					# ignore matrix diagonal
-		Ngap					<- apply(difs, 1, min)
+		difs[which(difs==0)]	<- NA						# ignore matrix diagonal
+		Ngap					<- apply(difs, 1, min, na.rm=T)
 
 		# Use summary statistics: mean and sd of gaps between neighbours
 		return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
@@ -118,6 +118,161 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 	dat[,2]	<- Uatry
 
 	return(dat)
+}
+
+manualLRT   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
+{
+    use1    <- rep(FALSE, reps)
+    use2    <- rep(FALSE, reps)
+    sig <- runif(reps, min, max)
+    atry    <- runif(reps, min, max)
+
+    # Setting e empirically for kernel1
+    treps   <- as.integer( sqrt(reps) )     #reps/1e1
+    if(is.na(a) & is.na(sigma))
+    {
+        test    <- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel1, lim=lim) )
+    }    else if(is.double(a))
+    {
+        test    <- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel1, lim=lim) )
+    }    else if(is.double(sigma))
+    { 
+        test    <- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel1, lim=lim) )
+    }
+    if(is.na(e))    ep1  <- min(test)    else            ep1  <- e * min(test)
+
+
+    # Setting e empirically for kernel2
+    treps   <- as.integer( sqrt(reps) )     #reps/1e1
+    if(is.na(a) & is.na(sigma))
+    {
+        test    <- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel2, lim=lim) )
+    }    else if(is.double(a))
+    {
+        test    <- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel2, lim=lim) )
+    }    else if(is.double(sigma))
+    { 
+        test    <- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel2, lim=lim) )
+    }
+    if(is.na(e))    ep2  <- min(test)    else            ep2  <- e * min(test)
+
+    use1 <- mcmapply(function(use1, atry, sig)
+        {
+            dif <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel1, lim=lim)
+            if(dif < ep1)    use1    <- TRUE
+            else            use1    <- FALSE
+        }, use1, atry, sig, mc.cores=cores)
+
+    use2 <- mcmapply(function(use2, atry, sig)
+        {
+            dif <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel2, lim=lim)
+            if(dif < ep2)    use2    <- TRUE
+            else            use2    <- FALSE
+        }, use2, atry, sig, mc.cores=cores)
+
+    a_accepted		<- atry[ which(use1 == T) ]
+    sig_accepted1	<- sig[ which(use1 == T) ]
+    sig_accepted2	<- sig[ which(use2 == T) ]
+
+    sig_est1	<- mean(sig_accepted1)
+	sig_est2	<- mean(sig_accepted2)
+	a_est	<- mean(a_accepted)			# goes with H1 & sig_est1
+
+    # Setting e empirically for LRT
+    treps   <- as.integer( sqrt(reps) )
+    test    <- replicate(treps, get_dif(tree, data, a_est, sig_est1, dt=dt, kernel=kernel1, lim=lim) )
+    if(is.na(e))    ep  <- min(test)    else	ep  <- e * min(test)
+
+    use1 <- mcmapply(function(use)
+        {
+            dif <- get_dif(tree, data, a_est, sig_est1, dt=dt, kernel=kernel1, lim=lim)
+            if(dif < ep)	use1    <- TRUE
+            else			use1    <- FALSE
+        }, use1, mc.cores=cores)
+
+    lik1	<- length(which(use1==TRUE))
+
+    use2 <- mcmapply(function(use)
+        {
+            dif <- get_dif(tree, data, 0, sig_est2, dt=dt, kernel=kernel2, lim=lim)
+            if(dif < ep)	use2    <- TRUE
+            else			use2    <- FALSE
+        }, use2, mc.cores=cores)
+
+	lik2	<- length(which(use2==TRUE))
+
+    LRT				<- -2 * log( lik2 / lik1 )
+
+	return( data.frame(sig_est1, a_est, sig_est2, lik1, lik2, LRT) )
+}
+
+
+
+manualLRTold	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=0, plot=F)
+{
+	use1 	<- rep(FALSE, reps)
+	use2 	<- rep(FALSE, reps)
+	if(is.na(sigma)) 	sig	<- runif(reps, min, max)
+		else			sig	<- rep(sigma, reps)
+	if(is.na(a)) 		atry	<- runif(reps, min, max)
+		else			atry	<- rep(a, reps)
+
+	# Setting e empirically
+	treps	<- as.integer( sqrt(reps) )		#reps/1e1
+	if(is.na(a) & is.na(sigma)) 
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel1, lim=lim) )
+	else if(is.double(a))
+		test 	<- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel1, lim=lim) )
+	else if(is.double(sigma))
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel1, lim=lim) )
+
+	if(is.na(e))	ep	<- min(test)
+	else			ep	<- e * min(test)
+
+	use1 <- mcmapply(function(use, atry, sig)	
+		{
+			dif <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel1)
+			if(dif < ep)	use1	<- TRUE
+			else			use1	<- FALSE
+		}, use1, atry, sig, mc.cores=cores)
+
+	use2 <- mcmapply(function(use, atry, sig)	
+		{
+			dif <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel2)
+			if(dif < ep)	use2	<- TRUE
+			else			use2	<- FALSE
+		}, use2, atry, sig, mc.cores=cores)
+
+	Usig1	<- sig[which(use1 == TRUE)]
+	Uatry1	<- atry[which(use1 == TRUE)]
+	dat1 	<- matrix(ncol=2, nrow=length(Usig1))
+	dat1[,1]	<- Usig1
+	dat1[,2]	<- Uatry1
+
+	Usig2	<- sig[which(use2 == TRUE)]
+	Uatry2	<- atry[which(use2 == TRUE)]
+	dat2 	<- matrix(ncol=2, nrow=length(Usig2))
+	dat2[,1]	<- Usig2
+	dat2[,2]	<- Uatry2
+
+	library("ks")
+
+	k1	<- kde(dat1, xmin=c(0, 0), xmax=c(max,max))
+	k2	<- kde(dat2, xmin=c(0, 0), xmax=c(max,max))
+
+	k_max_index 	<- which(k1$estimate == max(k1$estimate), arr.ind = TRUE)
+	H1_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
+	H1_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+	k0_max_index	<- which(k2$estimate == max(k2$estimate), arr.ind = TRUE)
+	H0_lik 			<- k0$estimate[k0_max_index[1], k0_max_index[2]]
+	H0_est 			<- c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	LRT				<- -2 * log( H0_lik / H1_lik )
+
+	if(plot==TRUE)	plot(k, "persp")
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
 
