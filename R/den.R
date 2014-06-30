@@ -121,7 +121,38 @@ ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1
 	return(dat)
 }
 
+
 manualLRT   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
+{
+	sig 	<- runif(reps, min, max)
+    atry    <- runif(reps, min, max)
+   	H0_dist <- 1:reps 					# H0 distances to truth
+   	H1_dist <- 1:reps 					# H1 distances to truth
+
+   	# Simulate H0 (BM model)
+    H0_dist <- mcmapply(function(H0_dist, atry, sig)
+    {
+        H0_dist <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel2, lim=lim)
+    }, H0_dist, atry, sig, mc.cores=cores)
+
+   	# Simulate H1 (competition with limits)
+    H1_dist <- mcmapply(function(H1_dist, atry, sig)
+    {
+        H1_dist <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel1, lim=lim)
+    }, H1_dist, atry, sig, mc.cores=cores)
+
+    # Get H0 simulation 1% of way from smallest
+    cutoff	<- quantile(H0_dist, 0.005)
+
+    # How many simulations smaller than cutoff?
+    H0_lik 	<- length( which(H0_dist < cutoff) )
+    H1_lik 	<- length( which(H1_dist < cutoff) )
+    LRT				<- -2 * log( H0_lik / H1_lik )
+
+	return( data.frame(H0_lik, H1_lik, LRT) )
+}
+
+manualLRTold2   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
 {
     use1    <- rep(FALSE, reps)
     use2    <- rep(FALSE, reps)
@@ -129,7 +160,7 @@ manualLRT   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=N
     atry    <- runif(reps, min, max)
 
     # Setting e empirically for kernel1
-    treps   <- as.integer( sqrt(reps) )     #reps/1e1
+    treps   <- as.integer (1e3)			#( sqrt(reps) )     #reps/1e1
     if(is.na(a) & is.na(sigma))
     {
         test    <- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel1, lim=lim) )
