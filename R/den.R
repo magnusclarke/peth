@@ -5,6 +5,7 @@
 library("ape")
 library("TESS")
 library("parallel")
+library("ks")
 source("simPlot.R")
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
@@ -310,24 +311,29 @@ manualLRTold	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 
 LRT	<- function(dat, min=0, max=10, plot=FALSE) 
 {
-	library("ks")
+	if(length(dat)==0){
+		H0_est 	<- 0
+		H0_lik 	<- 0
+		H1_est 	<- 0
+		H1_lik 	<- 0
+		LRT 	<- 0
+	} else {
+		k 	<- kde(dat, xmin=c(0, 0), xmax=c(max,max))
+		k0	<- kde(dat, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
 
-	k 	<- kde(dat, xmin=c(0, 0), xmax=c(max,max))
-	k0	<- kde(dat, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
-
-	k_max_index 	<- which(k$estimate == max(k$estimate), arr.ind = TRUE)
-	H1_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
-	H1_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+		k_max_index 	<- which(k$estimate == max(k$estimate), arr.ind = TRUE)
+		H1_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
+		H1_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
 
 
-	k0_max_index	<- which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
-	H0_lik 			<- k0$estimate[k0_max_index[1], k0_max_index[2]]
-	H0_est 			<- c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+		k0_max_index	<- which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+		H0_lik 			<- k0$estimate[k0_max_index[1], k0_max_index[2]]
+		H0_est 			<- c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
 
-	LRT				<- -2 * log( H0_lik / H1_lik )
+		LRT				<- -2 * log( H0_lik / H1_lik )
 
-	if(plot==TRUE)	plot(k, "persp")
-
+		if(plot==TRUE)	plot(k, "persp")
+	}
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
