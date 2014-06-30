@@ -311,7 +311,7 @@ manualLRTold	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 
 LRT	<- function(dat, min=0, max=10, plot=FALSE) 
 {
-	if(length(dat)==0){
+	if(length(dat)<2){
 		H0_est 	<- 0
 		H0_lik 	<- 0
 		H1_est 	<- 0
