@@ -1,4 +1,7 @@
 #include "Tree.h"
+#include <vector>
+#include "boost/random/mersenne_twister.hpp"
+#include "boost/random/normal_distribution.hpp"
 using std::vector;
 
 void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[])
@@ -38,24 +41,34 @@ void Tree::simulation(double &a, double &sigma, double &dt, double &lim, int &ke
 	vector<double> single_nodeVal;
 	nodeVal.assign(Ntraits, single_nodeVal);
 
-	simSeg(a, s, dt, lim, kernel, node, nodeVal, run_vals);
-
 	// NF simulation
 	if(kernel==3){
 		simNF(a, s, dt, lim, kernel, node, nodeVal, run_vals);		
-	}
+	} else {
+		simSeg(a, s, dt, lim, kernel, node, nodeVal, run_vals);
+	} 
 }
 
 void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
-	//vals[0][3] = 5;		
+	boost::mt19937_64 generator; 			
+	generator.seed(rand()); 
+	boost::normal_distribution<double> distribution;
 
-	
+	double nicheVar = s/sqrt(dt);		// variance of niche distribution. The parameter sigma controls this for the NF mdoel.
+ 
 	bool run[edge_count];
+	int x=0;
 	for(int i = 0; i < edge_count; i++) 
 	{
-		if(st[i] == root)	run[i] = true;
- 		else 				run[i] = false;
+		if(st[i] == root){
+			run[i] = true;
+			// alternate new vals get random value from niche distribution (1 trait only here)
+			if(x%2==0)	vals[0][i] += nicheVar * distribution(generator);
+			x = x+1;
+		} else {
+			run[i] = false;			
+		} 	
 	}
 
 	// While there are branches to simulate
@@ -81,12 +94,6 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 				if (length[i] < time)	time = length[i];
 			}
 		}
-
-		// Simulate evolution on the run_vals
-		// for (int i = 0; i < run_vals[0].size(); ++i)
-		// {
-		// 	run_vals[0][i] += rand() % 100;;
-		// }
 
 		// Copy the run_vals back to the corresponding vals.
 		// Reduce the running branch lengths by 'time'
@@ -119,18 +126,45 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 		// Branches that start at a node in 'node' are due to begin simulation.
 		// Copy nodeVals to the corresponding new branches.
 		// And set those branches running.
+		// And make 1 new branch jump to a random niche, which is closest to itself.
+		int x = 0;
 		for(int i=0; i < edge_count; i++)
 		{
-			for(unsigned int j=0; j < node.size(); j++){
-				if(st[i] == node[j]) {
+			for(unsigned int j=0; j < node.size(); j++)
+			{
+				if(st[i] == node[j]) 
+				{
 					for (int k = 0; k < Ntraits; ++k)
 					{
-						vals[k][i] += 5;	//nodeVal[k][j];
+						vals[k][i] = nodeVal[k][j];
+						// alternate new vals get random value from niche distribution
+						if(x%2==0)
+						{
+							// Generate niches until niche is closest to vals[k][i] out of all vals[k]
+							double newNiche;
+							int use = 1;
+							while(use==1){
+								use = 0;
+								newNiche	= nicheVar * distribution(generator);
+								double difference = abs(newNiche - vals[k][i]);
+								for(int m=0; m < edge_count; m++)
+								{
+									if(abs(newNiche - vals[k][i]) < (difference-0.00001))		use = 1;
+								}
+							}
+							vals[k][i] = newNiche;
+						}	
+						x = x+1;	
 					}
 					run[i] = true;
 				}
 			}
 		}
+
+
+
+
+
 
 		// Stop branches running when they reach zero length.
 		for (int i = 0; i < edge_count; i++)
