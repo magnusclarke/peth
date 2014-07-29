@@ -12,7 +12,7 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 
 cores	<- detectCores()
 
-# random ultrametric tree
+# random ultrametric tree - RENAME
 randUMT	<- function(nt, lambda=1, mu=0)
 {
 	tree 	<- sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	
@@ -52,6 +52,7 @@ genTree	<- function(tree, a=0, sigma=1, dt=1, nTraits=1, kernel="CE", lim=0)
 }
 
 # generate vcv-matrix of simulated trees. a=0 is BM
+# LOSE
 simVCV	<- function(tree, a=0, sigma=1, reps=1e3, dt=1) 
 {
 	x	<- t( replicate(reps, genTree(tree, a, sigma, dt)$trait1))
@@ -85,73 +86,144 @@ get_dif	<- function(tree, data, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0)
 
 }
 
-# Fit model to tree and tip data
-ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel="CE", lim=0, plot=FALSE)
+LRT 	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F)
 {
-	use 	<- rep(FALSE, reps)
-	if(is.na(sigma)) 	sig	<- runif(reps, min, max)
-		else		sig	<- rep(sigma, reps)
-	if(is.na(a)) 		atry	<- runif(reps, min, max)
-		else		atry	<- rep(a, reps)
+	if(kernel1=="CE" && kernel2=="BM")
+	{
+		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot) )
+	} else {
+		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
+	}
+}
 
-	# Setting e empirically
-	treps	<- as.integer( sqrt(reps) )		#reps/1e1
-	if(is.na(a) & is.na(sigma)) 
-		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
-	else if(is.double(a))
-		test 	<- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
-	else if(is.double(sigma))
-		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel, lim=lim) )
+nestedLRT	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE)
+{
+	sig 	<- runif(reps, min, max)
+    atry    <- runif(reps, min, max)
+   	H1_dist <- 1:reps 				
 
-	if(is.na(e))	ep	<- min(test)
-	else		ep	<- e * min(test)
+   	# Simulate and get distances to truth
+    H1_dist <- mcmapply(function(H1_dist, atry, sig) {
+        H1_dist <- get_dif(tree, data, atry, sig, dt=dt, kernel="CE", lim=lim)
+    }, H1_dist, atry, sig, mc.cores=cores)
 
-	use <- mcmapply(function(use, atry, sig)	
-		{
-			dif <- get_dif(tree, data, atry, sig, dt=dt)
-			if(dif < ep)	use	<- TRUE
-			else			use	<- FALSE
-		}, use, atry, sig, mc.cores=cores)
+    # Get simulation 0.5% of way from smallest distance to truth
+    cutoff	<- quantile(H1_dist, 0.005)
+    H1_post		<- which(H1_dist < cutoff)
+    Usig		<- sig[H1_post]
+	Uatry		<- atry[H1_post]
+	H1_post		<- matrix(ncol=2, nrow=length(Usig))
+	H1_post[,1]	<- Usig
+	H1_post[,2]	<- Uatry
 
-	Usig	<- sig[which(use == TRUE)]
-	Uatry	<- atry[which(use == TRUE)]
-	dat 	<- matrix(ncol=2, nrow=length(Usig))
-	dat[,1]	<- Usig
-	dat[,2]	<- Uatry
+	k 	<- kde(H1_post, xmin=c(0, 0), xmax=c(max,max))
+	k0	<- kde(H1_post, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
 
-	return(dat)
+	k_max_index 	<- which(k$estimate == max(k$estimate), arr.ind = TRUE)
+	H1_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
+	H1_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+
+	k0_max_index	<- which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+	H0_lik 			<- k0$estimate[k0_max_index[1], k0_max_index[2]]
+	H0_est 			<- c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	LRT				<- -2 * log( H0_lik / H1_lik )
+
+	if(plot==TRUE)	plot(k, "persp")
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
 
-manualLRT   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
+unnestedLRT   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
 {
 	sig 	<- runif(reps, min, max)
     atry    <- runif(reps, min, max)
    	H0_dist <- 1:reps 					# H0 distances to truth
    	H1_dist <- 1:reps 					# H1 distances to truth
 
-   	# Simulate H0 (BM model)
-    H0_dist <- mcmapply(function(H0_dist, atry, sig)
-    {
+   	#-------------------- Simulate H0  -------------------------------------------#
+    H0_dist <- mcmapply(function(H0_dist, atry, sig) {
         H0_dist <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel2, lim=lim)
     }, H0_dist, atry, sig, mc.cores=cores)
 
-   	# Simulate H1 (competition with limits)
-    H1_dist <- mcmapply(function(H1_dist, atry, sig)
-    {
+    # Get H0 simulation 0.5% of way from smallest
+    cutoffH0	<- quantile(H0_dist, 0.005)
+
+    # Which simulations smaller than cutoff?
+    H0_post		<- which(H0_dist < cutoffH0)
+	Usig		<- sig[H0_post]
+	Uatry		<- atry[H0_post]
+	H0_post		<- matrix(ncol=2, nrow=length(Usig))
+	H0_post[,1]	<- Usig
+	H0_post[,2]	<- Uatry
+
+    # Get H0 MLEs with kernel density function to find likelihood peak
+	k 	<- kde(H0_post, xmin=c(0, 0), xmax=c(max,max))
+	k_max_index 	<- which(k$estimate == max(k$estimate), arr.ind = TRUE)
+	H0_lik 			<- k$estimate[k_max_index[1], k_max_index[2]]
+	H0_est 			<- c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+	#-------------------- Simulate H1 -------------------------------------------#
+    H1_dist <- mcmapply(function(H1_dist, atry, sig) {
         H1_dist <- get_dif(tree, data, atry, sig, dt=dt, kernel=kernel1, lim=lim)
     }, H1_dist, atry, sig, mc.cores=cores)
 
-    # Get H0 simulation 1% of way from smallest
+    # Get H1 simulation 0.5% of way from smallest
+    cutoff	<- quantile(H1_dist, 0.005)
+
+    # Which simulations smaller than cutoff?
+    H1_post	<- which(H1_dist < cutoff)
+    Usig		<- sig[H1_post]
+	Uatry		<- atry[H1_post]
+	H1_post		<- matrix(ncol=2, nrow=length(Usig))
+	H1_post[,1]	<- Usig
+	H1_post[,2]	<- Uatry
+
+    # Get H0 MLEs with kernel density function to find likelihood peak
+	k1 	<- kde(H1_post, xmin=c(0, 0), xmax=c(max,max))
+	k1_max_index 	<- which(k1$estimate == max(k1$estimate), arr.ind = TRUE)
+	H1_lik 			<- k1$estimate[k1_max_index[1], k1_max_index[2]]
+	H1_est 			<- c(unlist(k1$eval.points)[k1_max_index[1]], unlist(k1$eval.points)[length(k1$estimate[,1]) + k1_max_index[2]])
+
+	#-------------------------- resimulate H0 and H1 with MLEs and compare likelihoods ----------#
+
+    H0_dist <- mcmapply(function(H0_dist)
+    {
+        H0_dist <- get_dif(tree, data, a=H0_est[1], sig=H0_est[2], dt=dt, kernel=kernel2, lim=lim)
+    }, H0_dist, mc.cores=cores)
+
+    H1_dist <- mcmapply(function(H1_dist)
+    {
+        H1_dist <- get_dif(tree, data, a=H1_est[1], sig=H1_est[2], dt=dt, kernel=kernel1, lim=lim)
+    }, H1_dist, mc.cores=cores)
+
+    # Get H0 simulation 0.5% of way from smallest
     cutoff	<- quantile(H0_dist, 0.005)
 
     # How many simulations smaller than cutoff?
     H0_lik 	<- length( which(H0_dist < cutoff) )
     H1_lik 	<- length( which(H1_dist < cutoff) )
-    LRT				<- -2 * log( H0_lik / H1_lik )
+    LRT		<- -2 * log( H0_lik / H1_lik )
 
-	return( data.frame(H0_lik, H1_lik, LRT) )
+	# return( data.frame(H0_lik, H1_lik, LRT) )
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
+
+
+
+
+
+
+
+
+
+#---------- LOSE ALL BELOW --------#
+
+
+
+
 
 manualLRTold2   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
 {
@@ -239,8 +311,6 @@ manualLRTold2   <- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sig
 	return( data.frame(sig_est1, a_est, sig_est2, lik1, lik2, LRT) )
 }
 
-
-
 manualLRTold	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=0, plot=F)
 {
 	use1 	<- rep(FALSE, reps)
@@ -309,7 +379,44 @@ manualLRTold	<- function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 }
 
 
-LRT	<- function(dat, min=0, max=10, plot=FALSE) 
+# Fit model to tree and tip data
+ABC	<- function	(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel="CE", lim=0, plot=FALSE)
+{
+	use 	<- rep(FALSE, reps)
+	if(is.na(sigma)) 	sig	<- runif(reps, min, max)
+		else		sig	<- rep(sigma, reps)
+	if(is.na(a)) 		atry	<- runif(reps, min, max)
+		else		atry	<- rep(a, reps)
+
+	# Setting e empirically
+	treps	<- as.integer( sqrt(reps) )		#reps/1e1
+	if(is.na(a) & is.na(sigma)) 
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
+	else if(is.double(a))
+		test 	<- replicate(treps, get_dif(tree, data, a, runif(1, min, max), dt=dt, kernel=kernel, lim=lim) )
+	else if(is.double(sigma))
+		test 	<- replicate(treps, get_dif(tree, data, runif(1, min, max), sigma, dt=dt, kernel=kernel, lim=lim) )
+
+	if(is.na(e))	ep	<- min(test)
+	else		ep	<- e * min(test)
+
+	use <- mcmapply(function(use, atry, sig)	
+		{
+			dif <- get_dif(tree, data, atry, sig, dt=dt)
+			if(dif < ep)	use	<- TRUE
+			else			use	<- FALSE
+		}, use, atry, sig, mc.cores=cores)
+
+	Usig	<- sig[which(use == TRUE)]
+	Uatry	<- atry[which(use == TRUE)]
+	dat 	<- matrix(ncol=2, nrow=length(Usig))
+	dat[,1]	<- Usig
+	dat[,2]	<- Uatry
+
+	return(dat)
+}
+
+oldLRT	<- function(dat, min=0, max=10, plot=FALSE) 
 {
 	if(length(dat)<2){
 		H0_est 	<- 0
