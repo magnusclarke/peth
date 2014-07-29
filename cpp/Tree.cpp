@@ -58,14 +58,15 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 	double nicheVar = s/sqrt(dt);		// variance of niche distribution. The parameter sigma controls this for the NF mdoel.
  
 	bool run[edge_count];
-	int x=0;
+	//int x=0;
 	for(int i = 0; i < edge_count; i++) 
 	{
 		if(st[i] == root){
 			run[i] = true;
-			// alternate new vals get random value from niche distribution (1 trait only here)
-			if(x%2==0)	vals[0][i] += nicheVar * distribution(generator);
-			x = x+1;
+			// new vals get random value from niche distribution (1 trait only here)
+			//if(x%2==0)	vals[0][i] += nicheVar * distribution(generator);
+			vals[0][i] += nicheVar * distribution(generator);
+			//x = x+1;
 		} else {
 			run[i] = false;			
 		} 	
