@@ -27,9 +27,10 @@ void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[
 	}
 }
 
-void Tree::simulation(double &a, double &sigma, double &dt, double &lim, int &kernel)
+void Tree::simulation(double &a, double &sigma, double &sigma2, double &dt, double &lim, int &kernel, int &ratecut)
 {
-	double s = sigma * sqrt(dt);
+	double s 	= sigma * sqrt(dt);
+	double s2 	= sigma2 * sqrt(dt);
 
 	vector<vector<double> > run_vals;	// values of running lines
 	vector<double> 	single_value (1,0);
@@ -45,7 +46,7 @@ void Tree::simulation(double &a, double &sigma, double &dt, double &lim, int &ke
 	if(kernel==3){
 		simNF(a, s, dt, lim, kernel, node, nodeVal, run_vals);		
 	} else {
-		simSeg(a, s, dt, lim, kernel, node, nodeVal, run_vals);
+		simSeg(a, s, s2, dt, lim, kernel, ratecut, node, nodeVal, run_vals);
 	} 
 }
 
@@ -186,7 +187,7 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 }
 
 
-void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
+void Tree::simSeg(double &a, double &s, double &s2, double &dt, double &lim, int &kernel, int &ratecut, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
 
 	bool run[edge_count];
@@ -195,6 +196,8 @@ void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, ve
 		if(st[i] == root)	run[i] = true;
  		else 				run[i] = false;
 	}
+
+	int node_counter = 0;
 
 	while(run_vals[0].empty() == false){
 
@@ -219,14 +222,25 @@ void Tree::simSeg(double &a, double &s, double &dt, double &lim, int &kernel, ve
 		int l = run_vals[0].size();
 		int count = ( time / dt );
 
+		// Use BM rate s up to the ratecut node, then use the rate s2.
+		double rate = 0;
+		if(node_counter < ratecut){
+			rate = s;
+		} else if(node_counter >= ratecut) {
+			rate = s2;
+		}
+
 		Sim segment;
-		if(kernel==0){
-			segment.BMsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
+		if(kernel==0 || kernel==4){
+			segment.BMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt);
 		} else if(kernel==1) {
-			segment.CEsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt);
+			segment.CEsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt);
 		} else if(kernel==2) {
-			segment.LIMsim(run_vals, &Ntraits, &l, &a, &s, &count, &dt, &lim);
-		} 		
+			segment.LIMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt, &lim);
+		} //else if(kernel==4) {
+		// 	segment.RCsim(run_vals, &Ntraits, &l, &a, rate, &s2, &count, &dt, &lim);
+		// }
+		node_counter++;
 
 		int z = 0;
 		for(int i=0; i < edge_count; i++){

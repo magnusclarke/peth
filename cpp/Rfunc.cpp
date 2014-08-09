@@ -1,13 +1,13 @@
 #include "Sim.h"	
 #include "Tree.h"
 
-extern "C" void genTree(int *ec, int *nc, int *nt, int *kernel, double *a, int *start, int *end, double *len, double *sigma, double *dt, double *lim, double *tip)
+extern "C" void genTree(int *ec, int *nc, int *nt, int *kernel, int *ratecut, double *a, int *start, int *end, double *len, double *sigma, double *sigma2, double *dt, double *lim, double *tip)
 {
 	Tree phy;
 	
 	phy.setValues (*ec, *nc, *nt, start, end, len, tip);
 
-	phy.simulation(*a, *sigma, *dt, *lim, *kernel);
+	phy.simulation(*a, *sigma, *sigma2, *dt, *lim, *kernel, *ratecut);
 
 	for (int j = 0; j < *nt; ++j)
 	{
