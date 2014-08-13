@@ -19,12 +19,13 @@ rUMT	= function(nt, lambda=1, mu=0)
 }
 
 # simulate tip trait data: 2 traits
-genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", ratecut=5, lim=0) 
+genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", lim=0) 
 {
 	dt 	= 0.01 * dt
 
 	# Require tree$edge to be a matrix of integers not doubles. TESS gives doubles.
 	tree$edge = apply(tree$edge, c(1,2), function(x) x = as.integer(x))	
+	rcut = length(tree$edge) / 2		# Change BM rate at midpoint
 
 	tip_count      = length( tree$tip.label )
 	st             = tree$edge[,1]
@@ -39,7 +40,7 @@ genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE",
 	if(kernel=="RC")	k=4
 
 	result	= .C 	("genTree", ec=edge_count, nc = tip_count,
-			nt = as.integer(nTraits), kernel=as.integer(k), ratecut=as.integer(ratecut),
+			nt = as.integer(nTraits), kernel=as.integer(k), ratecut=as.integer(rcut),
 			a=as.double(a), start=st, end, len=as.double(length),
 			sigma=as.double(sigma), sigma2=as.double(sigma2), dt=as.double(dt), lim=as.double(lim),
 			tip=rep(0.0, edge_count*nTraits))
@@ -60,20 +61,22 @@ asVCV	= function(tree, a=0, sigma=1, reps=1e3, dt=1)
 }
 
 # obtain difference between data and a single simulated tree (for ABC not user)
-get_dif	= function(tree, data, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0) 
+get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel="CE", lim=0, nTraits=1) 
 {
+	if(sigma2=="NA") 	sigma2 = sigma 		# For if we aren't using a 2-rate model. Shouldn't matter really.
+
 	ntips	= length(data[,1])
 	nTraits	= length(data[1,])
-	new		= genTree(tree, a, sigma, dt, nTraits=nTraits, kernel=kernel, lim=lim)		# simulate dataset
+	new		= genTree(tree=tree, a=a, sigma=sigma, sigma2=sigma2, dt=dt, kernel=kernel, lim=lim)		# simulate dataset
 
 	if(a != 0 | force == TRUE)
 	{
-		difs					= as.matrix(dist(data))	# euclidian distance
-		difs[which(difs==0)]	= NA						# ignore matrix diagonal
+		difs					= as.matrix(dist(data))			# euclidian distance
+		difs[which(difs==0)]	= NA							# ignore matrix diagonal
 		Dgap					= apply(difs, 1, min, na.rm=T)	
 
-		difs					= as.matrix(dist(new))		# euclidian distance
-		difs[which(difs==0)]	= NA						# ignore matrix diagonal
+		difs					= as.matrix(dist(new))			# euclidian distance
+		difs[which(difs==0)]	= NA							# ignore matrix diagonal
 		Ngap					= apply(difs, 1, min, na.rm=T)
 
 		# Use summary statistics: mean and sd of gaps between neighbours
@@ -86,13 +89,13 @@ get_dif	= function(tree, data, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0)
 
 }
 
-LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F)
+LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F)
 {
 	if(kernel1=="CE" && kernel2=="BM")
 	{
 		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot) )
 	} else {
-		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
+		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, sigma2=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
 	}
 }
 
@@ -104,7 +107,7 @@ nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, 
 
    	# Simulate and get distances to truth
     H1_dist = mcmapply(function(H1_dist, atry, sig) {
-        H1_dist = get_dif(tree, data, atry, sig, dt=dt, kernel="CE", lim=lim)
+        H1_dist = get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
     }, H1_dist, atry, sig, mc.cores=cores)
 
     # Get simulation 0.5% of way from smallest distance to truth
@@ -135,18 +138,18 @@ nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, 
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
-
-unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
+unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
 {
 	sig 	= runif(reps, min, max)
+	sig2 	= runif(reps, min, max)
     atry    = runif(reps, min, max)
    	H0_dist = 1:reps 					# H0 distances to truth
    	H1_dist = 1:reps 					# H1 distances to truth
 
    	#-------------------- Simulate H0  -------------------------------------------#
-    H0_dist = mcmapply(function(H0_dist, atry, sig) {
-        H0_dist = get_dif(tree, data, atry, sig, dt=dt, kernel=kernel2, lim=lim)
-    }, H0_dist, atry, sig, mc.cores=cores)
+    H0_dist = mcmapply(function(H0_dist, atry, sig, sig2) {
+        H0_dist = get_dif(tree=tree, data=data, a=atry, sigma=sig, sigma2=sig2, dt=dt, kernel=kernel2, lim=lim)
+    }, H0_dist, atry, sig, sig2, mc.cores=cores)
 
     # Get H0 simulation 0.5% of way from smallest
     cutoffH0	= quantile(H0_dist, 0.005)
@@ -154,10 +157,12 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
     # Which simulations smaller than cutoff?
     H0_post		= which(H0_dist < cutoffH0)
 	Usig		= sig[H0_post]
+	Usig2		= sig2[H0_post]
 	Uatry		= atry[H0_post]
 	H0_post		= matrix(ncol=2, nrow=length(Usig))
 	H0_post[,1]	= Usig
-	H0_post[,2]	= Uatry
+	H0_post[,2]	= Usig2
+	# H0_post[,2]	= Uatry
 
     # Get H0 MLEs with kernel density function to find likelihood peak
 	k 	= kde(H0_post, xmin=c(0, 0), xmax=c(max,max))
@@ -166,9 +171,9 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 	H0_est 			= c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
 
 	#-------------------- Simulate H1 -------------------------------------------#
-    H1_dist = mcmapply(function(H1_dist, atry, sig) {
-        H1_dist = get_dif(tree, data, atry, sig, dt=dt, kernel=kernel1, lim=lim)
-    }, H1_dist, atry, sig, mc.cores=cores)
+    H1_dist = mcmapply(function(H1_dist, atry, sig, sig2) {
+        H1_dist = get_dif(tree, data, atry, sig, sig2, dt=dt, kernel=kernel1, lim=lim)
+    }, H1_dist, atry, sig, sig2, mc.cores=cores)
 
     # Get H1 simulation 0.5% of way from smallest
     cutoff	= quantile(H1_dist, 0.005)
@@ -191,12 +196,12 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 
     H0_dist = mcmapply(function(H0_dist)
     {
-        H0_dist = get_dif(tree, data, a=H0_est[1], sig=H0_est[2], dt=dt, kernel=kernel2, lim=lim)
+        H0_dist = get_dif(tree, data, a=0, sigma=H0_est[1], sigma2=H0_est[2], dt=dt, kernel=kernel2, lim=lim)
     }, H0_dist, mc.cores=cores)
 
     H1_dist = mcmapply(function(H1_dist)
     {
-        H1_dist = get_dif(tree, data, a=H1_est[1], sig=H1_est[2], dt=dt, kernel=kernel1, lim=lim)
+        H1_dist = get_dif(tree, data, a=H1_est[1], sigma=H1_est[2], dt=dt, kernel=kernel1, lim=lim)
     }, H1_dist, mc.cores=cores)
 
     # Get H0 simulation 0.5% of way from smallest
@@ -210,5 +215,3 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 	# return( data.frame(H0_lik, H1_lik, LRT) )
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
-
-
