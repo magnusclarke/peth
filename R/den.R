@@ -201,7 +201,7 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 
     H1_dist = mcmapply(function(H1_dist)
     {
-        H1_dist = get_dif(tree, data, a=H1_est[1], sigma=H1_est[2], dt=dt, kernel=kernel1, lim=lim)
+        H1_dist = get_dif(tree, data, sigma=H1_est[1], a=H1_est[2], dt=dt, kernel=kernel1, lim=lim)
     }, H1_dist, mc.cores=cores)
 
     # Get H0 simulation 0.5% of way from smallest
