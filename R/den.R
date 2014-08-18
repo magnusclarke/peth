@@ -196,7 +196,7 @@ unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=
 
     H0_dist = mcmapply(function(H0_dist)
     {
-        H0_dist = get_dif(tree, data, a=0, sigma=H0_est[1], sigma2=H0_est[2], dt=dt, kernel=kernel2, lim=lim)
+        H0_dist = get_dif(tree, data, a=0, sigma=H0_est[1], sigma2=H0_est[2], dt=dt, kernel=kernel2, lim=lim, force=TRUE)
     }, H0_dist, mc.cores=cores)
 
     H1_dist = mcmapply(function(H1_dist)
