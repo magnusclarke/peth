@@ -1,4 +1,4 @@
-# functions to simulate density-dependent trees
+# FUNCTIONs to simulate density-dependent trees
 # magnus
 # modified 6.2.14
 
