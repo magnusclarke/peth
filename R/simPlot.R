@@ -4,7 +4,7 @@
 
 P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime) 
 {
-	dt	<- 0.0001
+	dt	<- 0.001
 	for (j in 1:(time/dt)) 
 	{
 		for (i in 1:length(seg)) 
@@ -82,7 +82,7 @@ simPlot	<- function(tree, a=0, sigma=1)
 
 	# pplot <- data.frame(ptime, pdat) 	
 	# plot(pplot, pch=20, cex=0.25)		
-	plot(pdat[[1]]~ptime, pch=20, cex=0.1, type="p", ylim=c(-3*sigma*(1), 3*sigma*(1)),
+	plot(pdat[[1]]~ptime, pch=20, cex=0.1, type="p", ylim=c(-5*sigma*(1), 5*sigma*(1)),
 		, xlab="", ylab="", xaxt="n", yaxt="n")
 	for(i in 2:node_count)
 	{
