@@ -80,7 +80,9 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 		Ngap					= apply(difs, 1, min, na.rm=T)
 
 		# Use summary statistics: mean and sd of gaps between neighbours
-		return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+        return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+        # Kutsukake: compare absolute values (slow)
+        #return( sum(abs(new - dat)) )
 	} else {
 		Dtrait_var		= var(data)	
 		Ntrait_var		= var(new)	
