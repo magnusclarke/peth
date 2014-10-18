@@ -1,3 +1,4 @@
+
 # script to plot density dependent trees
 # sourced by den.R
 # slow and messy  -- just for plotting single simulations
