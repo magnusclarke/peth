@@ -55,10 +55,9 @@ genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE",
 }
 
 # generate vcv-matrix of simulated trees. a=0 is BM
-# BROKEN
 asVCV	= function(tree, a=0, sigma=1, reps=1e3, dt=1) 
 {
-	x	= t( replicate(reps, genTree(tree, a, sigma, dt)$traits))
+	x	= t( replicate(reps, genTree(tree, a, sigma, dt=dt)$traits))
 	return( cov(x) )
 }
 
