@@ -113,20 +113,43 @@ LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma
 	}
 }
 
-nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE)
+nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500)
 {
-	sig 	= runif(reps, min, max)
-    atry    = runif(reps, min, max)
-   	H1_dist = 1:reps 				
+	# Simulate and write to file as we go
+	for(i in 1:reps)
+   	{
+   		sig 	= runif(1, min, max)
+   		atry 	= runif(1, min, max)
+  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
+	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
+   	}
 
-   	# Simulate and get distances to truth
-    H1_dist = mcmapply(function(H1_dist, atry, sig) {
-        H1_dist = get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
-    }, H1_dist, atry, sig, mc.cores=cores)
+   	# Read simulations back into R
+   	x 	= read.csv(file)
+   	sig = x[,1]
+   	atry= x[,2]
+   	dist= x[,3]
+
+	#----------- OLD MULTITHREADED BT MEMORY INTENSIVE METHOD---------------#
+	
+	# sig 	= runif(reps, min, max)
+	# atry    = runif(reps, min, max)
+	# H1_dist = 1:reps 				
+
+	# # Simulate and get distances to truth
+	# H1_dist = mcmapply(function(H1_dist, atry, sig) {
+	#    H1_dist = get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
+	# }, H1_dist, atry, sig, mc.cores=cores)
+
+	#-----------------------------------------------------------------------#
 
     # Get simulation 0.5% of way from smallest distance to truth
-    cutoff	= quantile(H1_dist, 0.005)
-    H1_post		= which(H1_dist < cutoff)
+    # cutoff	= quantile(H1_dist, 0.005)
+    # H1_post		= which(H1_dist < cutoff)
+
+    # Get simulations from 500th smallest to smallest
+    H1_post		= order(dist)[1:posteriorSize]
+    
     Usig		= sig[H1_post]
 	Uatry		= atry[H1_post]
 	H1_post		= matrix(ncol=2, nrow=length(Usig))
