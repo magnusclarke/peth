@@ -80,27 +80,19 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	# dataK = dataK / nTraits
 	# newK = newK / nTraits
 
-	if(a != 0 | force == TRUE)
-	{
-		difs					= as.matrix(dist(data))			# euclidian distance
-		difs[which(difs==0)]	= NA							# ignore matrix diagonal
-		Dgap					= apply(difs, 1, min, na.rm=T)	
+	difs					= as.matrix(dist(data))			# euclidian distance
+	difs[which(difs==0)]	= NA							# ignore matrix diagonal
+	Dgap					= apply(difs, 1, min, na.rm=T)	
 
-		difs					= as.matrix(dist(new))			# euclidian distance
-		difs[which(difs==0)]	= NA							# ignore matrix diagonal
-		Ngap					= apply(difs, 1, min, na.rm=T)
+	difs					= as.matrix(dist(new))			# euclidian distance
+	difs[which(difs==0)]	= NA							# ignore matrix diagonal
+	Ngap					= apply(difs, 1, min, na.rm=T)
 
-		# Use summary statistics: mean and sd of gaps between neighbours
-        return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
-        # return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
-        # Kutsukake: compare absolute values (slow)
-        #return( sum(abs(new - dat)) )
-	} else {
-		Dtrait_var		= var(data)	
-		Ntrait_var		= var(new)	
-		return( sum( abs(Dtrait_var - Ntrait_var) ) )
-	}	
-
+	# Use summary statistics: mean and sd of gaps between neighbours
+    return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+    # return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
+    # Kutsukake: compare absolute values (slow)
+    #return( sum(abs(new - dat)) )
 }
 
 LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F)
@@ -115,7 +107,7 @@ LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma
 
 nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500)
 {
-	# Simulate and write to file as we go
+	# Simulate and write to file as we go. Single threaded.
 	for(i in 1:reps)
    	{
    		sig 	= runif(1, min, max)
@@ -149,7 +141,7 @@ nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, 
 
     # Get simulations from 500th smallest to smallest
     H1_post		= order(dist)[1:posteriorSize]
-    
+
     Usig		= sig[H1_post]
 	Uatry		= atry[H1_post]
 	H1_post		= matrix(ncol=2, nrow=length(Usig))
