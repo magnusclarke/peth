@@ -6,6 +6,8 @@ library("ape")
 library("TESS")
 library("parallel")
 library("ks")
+library("picante")
+
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 
@@ -69,6 +71,16 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	nTraits	= length(data[1,])
 	new		= genTree(tree=tree, a=a, sigma=sigma, sigma2=sigma2, dt=dt, kernel=kernel, lim=lim)		# simulate dataset
 
+	# Get Blomberg's K averaged over traits
+	# dataK 	= 0
+	# newK 	= 0
+	# for(i in nTraits){
+	# 	dataK 	= dataK + Kcalc(data[,i], tree, F)
+	# 	newK 	= newK  + Kcalc(new[,i], tree, F)
+	# }
+	# dataK = dataK / nTraits
+	# newK = newK / nTraits
+
 	if(a != 0 | force == TRUE)
 	{
 		difs					= as.matrix(dist(data))			# euclidian distance
@@ -81,6 +93,7 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 
 		# Use summary statistics: mean and sd of gaps between neighbours
         return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+        # return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
         # Kutsukake: compare absolute values (slow)
         #return( sum(abs(new - dat)) )
 	} else {
