@@ -25,6 +25,8 @@ genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE",
 {
 	dt 	= 0.01 * dt
 
+	if(is.na(sigma2)) 	sigma2=sigma
+
 	# Require tree$edge to be a matrix of integers not doubles. TESS gives doubles.
 	tree$edge = apply(tree$edge, c(1,2), function(x) x = as.integer(x))	
 	rcut = length(tree$edge) / 2		# Change BM rate at midpoint
