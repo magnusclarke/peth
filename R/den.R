@@ -96,7 +96,7 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	# Use summary statistics: mean and sd of gaps between neighbours
     if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
     if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
-    if(sstat=="Kutsuk")	return( sum(abs(new - dat)) )    # Kutsukake method: compare absolute values (slow)
+    if(sstat=="Kutsuk")	return( sum(abs(new - data)) )    # Kutsukake method: compare absolute values (slow)
 }
 
 LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F, file="sample.out", sstat="std")
