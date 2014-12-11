@@ -62,7 +62,7 @@ asVCV	= function(tree, a=0, sigma=1, reps=1e3, dt=1)
 }
 
 # obtain difference between data and a single simulated tree (for ABC not user)
-get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel="CE", lim=0, nTraits=1) 
+get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel="CE", lim=0, nTraits=1, sstat="std") 
 {
 	if(sigma2=="NA") 	sigma2 = sigma 		# For if we aren't using a 2-rate model. Shouldn't matter really.
 
@@ -71,14 +71,17 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	new		= genTree(tree=tree, a=a, sigma=sigma, sigma2=sigma2, dt=dt, kernel=kernel, lim=lim)		# simulate dataset
 
 	# Get Blomberg's K averaged over traits
-	# dataK 	= 0
-	# newK 	= 0
-	# for(i in nTraits){
-	# 	dataK 	= dataK + Kcalc(data[,i], tree, F)
-	# 	newK 	= newK  + Kcalc(new[,i], tree, F)
-	# }
-	# dataK = dataK / nTraits
-	# newK = newK / nTraits
+	if(sstat=="K")
+	{
+		dataK 	= 0
+		newK 	= 0
+		for(i in nTraits){
+			dataK 	= dataK + Kcalc(data[,i], tree, F)
+			newK 	= newK  + Kcalc(new[,i], tree, F)
+		}
+		dataK = dataK / nTraits
+		newK = newK / nTraits
+	}
 
 	difs					= as.matrix(dist(data))			# euclidian distance
 	difs[which(difs==0)]	= NA							# ignore matrix diagonal
@@ -89,30 +92,29 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	Ngap					= apply(difs, 1, min, na.rm=T)
 
 	# Use summary statistics: mean and sd of gaps between neighbours
-    return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
-    # return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
-    # Kutsukake: compare absolute values (slow)
-    #return( sum(abs(new - dat)) )
+    if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+    if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
+    if(sstat=="Kutsuk")	return( sum(abs(new - dat)) )    # Kutsukake method: compare absolute values (slow)
 }
 
-LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F)
+LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F, sstat="std")
 {
 	if(kernel1=="CE" && kernel2=="BM")
 	{
-		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot) )
+		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot, sstat=sstat) )
 	} else {
 		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, sigma2=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
 	}
 }
 
-nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500)
+nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std")
 {
 	# Simulate and write to file as we go. Single threaded.
 	for(i in 1:reps)
    	{
    		sig 	= runif(1, min, max)
    		atry 	= runif(1, min, max)
-  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
+  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim, sstat=sstat)
 	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
    	}
 
