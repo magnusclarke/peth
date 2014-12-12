@@ -109,6 +109,42 @@ LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma
 	}
 }
 
+LRTfile = function(file="sample.out", posteriorSize=500)
+{
+   	# Read simulations back into R
+   	x 	= read.csv(file)
+   	sig = x[,1]
+   	atry= x[,2]
+   	dist= x[,3]
+
+    # Get simulations from 500th smallest to smallest
+    H1_post		= order(dist)[1:posteriorSize]
+
+    Usig		= sig[H1_post]
+	Uatry		= atry[H1_post]
+	H1_post		= matrix(ncol=2, nrow=length(Usig))
+	H1_post[,1]	= Usig
+	H1_post[,2]	= Uatry
+
+	k 	= kde(H1_post, xmin=c(0, 0), xmax=c(max,max))
+	k0	= kde(H1_post, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
+
+	k_max_index 	= which(k$estimate == max(k$estimate), arr.ind = TRUE)
+	H1_lik 			= k$estimate[k_max_index[1], k_max_index[2]]
+	H1_est 			= c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+
+	k0_max_index	= which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+	H0_lik 			= k0$estimate[k0_max_index[1], k0_max_index[2]]
+	H0_est 			= c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	LRT				= -2 * log( H0_lik / H1_lik )
+
+	if(plot==TRUE)	plot(k, "persp")
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
+}
+
 nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std")
 {
 	# Simulate and write to file as we go. Single threaded.
