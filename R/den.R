@@ -109,7 +109,7 @@ LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma
 	}
 }
 
-LRTfile = function(file="sample.out", posteriorSize=500)
+LRTfile = function(file="sample.out", posteriorSize=500, max=10)
 {
    	# Read simulations back into R
    	x 	= read.csv(file)
