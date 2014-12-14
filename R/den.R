@@ -140,8 +140,6 @@ LRTfile = function(file="sample.out", posteriorSize=500, max=10)
 
 	LRT				= -2 * log( H0_lik / H1_lik )
 
-	if(plot==TRUE)	plot(k, "persp")
-
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
