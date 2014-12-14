@@ -94,8 +94,10 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	Ngap					= apply(difs, 1, min, na.rm=T)
 
 	# Use summary statistics: mean and sd of gaps between neighbours
-    if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
-    if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
+    # if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
+	if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) *	abs(sd(Dgap) - sd(Ngap)))
+    # if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
+    if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap)) * abs(sd(Dgap) - sd(Ngap)) * abs(dataK - newK))
     if(sstat=="Kutsuk")	return( sum(abs(new - data)) )    # Kutsukake method: compare absolute values (slow)
 }
 
