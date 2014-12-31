@@ -145,6 +145,18 @@ LRTfile = function(file="sample.out", posteriorSize=500, max=10)
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
+genLRT      = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std")
+{
+	# Simulate and write to file as we go. Single threaded.
+	for(i in 1:reps)
+   	{
+   		sig 	= runif(1, min, max)
+   		atry 	= runif(1, min, max)
+  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim, sstat=sstat)
+	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
+   	}
+}
+
 nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std")
 {
 	# Simulate and write to file as we go. Single threaded.
