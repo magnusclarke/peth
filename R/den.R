@@ -73,17 +73,17 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	new		= genTree(tree=tree, a=a, sigma=sigma, sigma2=sigma2, dt=dt, nTraits=nTraits, kernel=kernel, lim=lim)		# simulate dataset
 
 	# Get Blomberg's K averaged over traits
-	# if(sstat=="K")
-	# {
+	 if(sstat=="K")
+	 {
 	# 	dataK 	= 0
 	# 	newK 	= 0
 		# for(i in nTraits){
 			dataK 	= Kcalc(data[,1], tree, F)  #dataK + Kcalc(data[,i], tree, F)
-			newK 	= Kcalc(new[,1], tree, F  #newK  + Kcalc(new[,i], tree, F)
-		# }
+			newK 	= Kcalc(new[,1], tree, F)  #newK  + Kcalc(new[,i], tree, F)
+		 }
 		# dataK = dataK / nTraits
 		# newK = newK / nTraits
-	}
+#}
 # 
 	difs					= as.matrix(dist(data))			# euclidian distance
 	difs[which(difs==0)]	= NA							# ignore matrix diagonal
@@ -111,11 +111,18 @@ LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma
 	}
 }
 
-LRTfile = function(file="sample.out", posteriorSize=500, max=10)
+LRTfile = function(file="sample.out", posteriorSize=500, max=10, ntraits=1)
 {
    	# Read simulations back into R
    	x 	= read.csv(file)
-   	sig = x[,1]
+
+    # Tidy infilej
+    for(i in 1:3){
+        x[,i] = as.numeric(as.character(x[,i]))
+        x = x[which(x[,i] > 0 & x[,i] < max),]
+    }
+
+    sig = x[,1]
    	atry= x[,2]
    	dist= x[,3]
 
