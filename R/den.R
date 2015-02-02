@@ -73,13 +73,13 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	new		= genTree(tree=tree, a=a, sigma=sigma, sigma2=sigma2, dt=dt, nTraits=nTraits, kernel=kernel, lim=lim)		# simulate dataset
 
 	# Get Blomberg's K averaged over traits
-	# if(sstat=="K")
-	# {
+	 if(sstat=="K")
+	 {
 	# 	dataK 	= 0
 	# 	newK 	= 0
 		# for(i in nTraits){
 			dataK 	= Kcalc(data[,1], tree, F)  #dataK + Kcalc(data[,i], tree, F)
-			newK 	= Kcalc(new[,1], tree, F  #newK  + Kcalc(new[,i], tree, F)
+			newK 	= Kcalc(new[,1], tree, F)  #newK  + Kcalc(new[,i], tree, F)
 		# }
 		# dataK = dataK / nTraits
 		# newK = newK / nTraits
