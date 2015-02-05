@@ -108,7 +108,8 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 				sumSqDist	+= sqDists[k];
 			}
 
-			double q	= sqrtDT_s * sqrt(sumSqDist);
+			// The first factor scales (INVERSELY) the width of the resource-use curves; 2nd is distance
+			double q	= 1 * sqrt(sumSqDist);
 
 			// simple approximation to pnorm(q, 0, 1, FALSE, FALSE); good to 2dp
 			double pn;
@@ -117,15 +118,15 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 			else if (q > 2.6)				{ pn = 0.50; }
 			else							{ pn = 0.50; }
 
-			double g = dta * (0.5-pn);
+			double g = 0.5 * dta * (0.5-pn);
 			
 			// Change in trait values, scaled by sigma
 			if(sumDist != 0)
 			{
 				for (int k = 0; k < Ntraits; ++k)
 				{
-					run_vals[k][i] += s_sqrtDT*g*(dists[k]/sumDist);
-					run_vals[k][j] -= s_sqrtDT*g*(dists[k]/sumDist);
+					run_vals[k][i] += g*(dists[k]/sumDist);
+					run_vals[k][j] -= g*(dists[k]/sumDist);
 				}
 			}
 		}
