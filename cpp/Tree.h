@@ -8,6 +8,7 @@ using std::vector;
 class Tree 
 {
 	int		edge_count, tip_count, Ntraits, root;
+	double covariance;
 	std::vector<int>	st, end;
 	std::vector<double>	length;
 
@@ -18,7 +19,7 @@ class Tree
 public:
 	std::vector<std::vector<double> > vals;
 
-	void 	setValues (int&, int&, int&, int[], int[], double[], double[]);
+	void 	setValues (int&, int&, int&, int[], int[], double[], double[], double&);
 	//void 	simulation (double&, double&, double&, double&, int&);
 	void 	simulation(double &a, double &sigma, double &sigma2, double &dt, double &lim, int &kernel, int &ratecut);
 

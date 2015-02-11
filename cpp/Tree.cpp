@@ -4,7 +4,7 @@
 #include "boost/random/normal_distribution.hpp"
 using std::vector;
 
-void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[])
+void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[], double &cov)
 {
 	edge_count 	= x;
 	tip_count 	= y;
@@ -13,6 +13,7 @@ void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[
 	st.assign	(x, 0);
 	end.assign	(x, 0);
 	length.assign	(x, 0);
+	covariance = cov;
 
 	std::vector<double> vec_start;
 	vec_start.assign (x, 0);	

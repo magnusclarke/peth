@@ -22,9 +22,18 @@ void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 
 	for(int i=0; i < len; ++i)
 	{
-		for (int j = 0; j < Ntraits; ++j)
+		double change0 = distribution(generator);
+		double change1 = distribution(generator);
+		run_vals[0][i] += s2_time * change0;
+		run_vals[1][i] += ( cov * s2_time * change0 ) + ( (1-cov) * s2_time * change1);
+
+		// If we have >2 traits, evolve the rest of them in usual uncorrelated fashion
+		if(Ntrait > 2)
 		{
+		    for (int j = 2; j < Ntraits; ++j)
+		    {
 			run_vals[j][i] += s2_time * distribution(generator);
+		    }
 		}
 	} 		
 }
@@ -42,17 +51,24 @@ void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 	// Time loop
 	for(int j = 0; j < *count; j++) 
 	{
-		// BM evolution, here uncorrelated between traits for simplicity
+		// BM evolution
 		// Loop over number of species
 		for(int i=0; i < len; i++)
 		{
-			for (int k = 0; k < Ntraits; ++k)
+			double change0 = distribution(generator);
+			double change1 = distribution(generator);
+			run_vals[0][i] += (*s) * change0;
+			run_vals[1][i] += ( cov * (*s) * change0 ) + ( (1-cov) * (*s) * change1);
+			if(Ntrait > 2)
 			{
-				run_vals[k][i] += (*s) * distribution(generator);
+			    for (int k = 2; k < Ntraits; ++k)
+			    {
+				    run_vals[k][i] += (*s) * distribution(generator);
+			    }
 			}
 		} 		
 		// Density-dependent evolution 
-		// Adding this ( for a!=0 ) roughly doubles runtime
+		// This roughly doubles runtime when a!=0
 		if(*a != 0)		denSim(run_vals, a, s, dt);
 	}
 }
