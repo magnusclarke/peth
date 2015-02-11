@@ -4,7 +4,7 @@
 #include "boost/random/normal_distribution.hpp"
 using std::vector;
 
-void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[], double &cov)
+void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[])
 {
 	edge_count 	= x;
 	tip_count 	= y;
@@ -13,7 +13,6 @@ void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[
 	st.assign	(x, 0);
 	end.assign	(x, 0);
 	length.assign	(x, 0);
-	covariance = cov;
 
 	std::vector<double> vec_start;
 	vec_start.assign (x, 0);	
@@ -28,7 +27,7 @@ void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[
 	}
 }
 
-void Tree::simulation(double &a, double &sigma, double &sigma2, double &dt, double &lim, int &kernel, int &ratecut)
+void Tree::simulation(double &a, double &sigma, double &sigma2, double &dt, double &lim, int &kernel, int &ratecut, double &cov)
 {
 	double s 	= sigma * sqrt(dt);
 	double s2 	= sigma2 * sqrt(dt);
@@ -47,7 +46,7 @@ void Tree::simulation(double &a, double &sigma, double &sigma2, double &dt, doub
 	if(kernel==3){
 		simNF(a, s, dt, lim, kernel, node, nodeVal, run_vals);		
 	} else {
-		simSeg(a, s, s2, dt, lim, kernel, ratecut, node, nodeVal, run_vals);
+		simSeg(a, s, s2, dt, lim, kernel, ratecut, node, nodeVal, run_vals, cov);
 	} 
 }
 
@@ -188,7 +187,7 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 }
 
 
-void Tree::simSeg(double &a, double &s, double &s2, double &dt, double &lim, int &kernel, int &ratecut, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
+void Tree::simSeg(double &a, double &s, double &s2, double &dt, double &lim, int &kernel, int &ratecut, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals, double &cov)
 {
 
 	bool run[edge_count];
@@ -233,9 +232,9 @@ void Tree::simSeg(double &a, double &s, double &s2, double &dt, double &lim, int
 
 		Sim segment;
 		if(kernel==0 || kernel==4){
-			segment.BMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt);
+			segment.BMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt, &cov);
 		} else if(kernel==1) {
-			segment.CEsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt);
+			segment.CEsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt, &cov);
 		} else if(kernel==2) {
 			segment.LIMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt, &lim);
 		} //else if(kernel==4) {

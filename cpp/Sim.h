@@ -12,8 +12,8 @@ class Sim
 	int len, Ntraits;
 	void denSim(vector<vector<double> > &run_vals, double *a, double *s, double *dt);
 public:
-	void CEsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt);
-	void BMsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt);
+	void CEsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *cov);
+	void BMsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *cov);
 	void LIMsim(vector<vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *lim);
 };
 

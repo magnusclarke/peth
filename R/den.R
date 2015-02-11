@@ -21,7 +21,7 @@ rUMT	= function(nt, lambda=1, mu=0)
 }
 
 # simulate tip trait data: 2 traits
-genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", lim=0) 
+genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", lim=0, cov=0) 
 {
 	dt 	= 0.01 * dt
 
@@ -47,7 +47,7 @@ genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE",
 			nt = as.integer(nTraits), kernel=as.integer(k), ratecut=as.integer(rcut),
 			a=as.double(a), start=st, end, len=as.double(length),
 			sigma=as.double(sigma), sigma2=as.double(sigma2), dt=as.double(dt), lim=as.double(lim),
-			tip=rep(0.0, edge_count*nTraits))
+			tip=rep(0.0, edge_count*nTraits), cov=as.double(cov))
 
 
 	traits = matrix(result$tip, ncol=nTraits)

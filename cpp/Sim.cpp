@@ -8,7 +8,7 @@ unsigned long long rdtsc()
         return ((unsigned long long)hi << 32) | lo;
 }
 
-void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
+void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *cov)
 {
 	len = *l;
 	Ntraits = *nt;	
@@ -25,10 +25,10 @@ void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 		double change0 = distribution(generator);
 		double change1 = distribution(generator);
 		run_vals[0][i] += s2_time * change0;
-		run_vals[1][i] += ( cov * s2_time * change0 ) + ( (1-cov) * s2_time * change1);
+		run_vals[1][i] += ( *cov * s2_time * change0 ) + ( (1-*cov) * s2_time * change1);
 
 		// If we have >2 traits, evolve the rest of them in usual uncorrelated fashion
-		if(Ntrait > 2)
+		if(Ntraits > 2)
 		{
 		    for (int j = 2; j < Ntraits; ++j)
 		    {
@@ -38,7 +38,7 @@ void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 	} 		
 }
 
-void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
+void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt, double *cov)
 {
 	len = *l;
 	Ntraits = *nt;		
@@ -58,10 +58,13 @@ void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 			double change0 = distribution(generator);
 			double change1 = distribution(generator);
 			run_vals[0][i] += (*s) * change0;
-			run_vals[1][i] += ( cov * (*s) * change0 ) + ( (1-cov) * (*s) * change1);
-			if(Ntrait > 2)
+			if(Ntraits == 2)
 			{
-			    for (int k = 2; k < Ntraits; ++k)
+				run_vals[1][i] += ( *cov * (*s) * change0 ) + ( (1-*cov) * (*s) * change1);
+			}
+			if(Ntraits > 2)
+			{
+			    for (int k = 1; k < Ntraits; ++k)
 			    {
 				    run_vals[k][i] += (*s) * distribution(generator);
 			    }
