@@ -1,11 +1,11 @@
 options(warn=-1)        # Disable warning messages for whole script
 
-cat('Initialising peth test...\n\n\n\n')
+cat('Initialising peth test...')
 
 dir = getwd()
-source('../R/den.R', chdir=T)
+suppressMessages(source('../R/den.R', chdir=T))
 setwd(dir)
-cat('\n\n\n\n\n')
+cat('\n')
 
 #----------- Check sensible distributions from simulations--------#
 check_dist = function(dat, kernel){
@@ -96,6 +96,29 @@ cat('Checking whether LRT results with signal (K) are sensible... ')
 lrt2 = LRT(tre, dat, sstat='K', reps=1e2, posteriorSize=50); file.remove('sample.out')
 test_lrt(lrt2)
 #-----------------------------------------------------------------#
+
+#----------- Simulation speed timer ------------------------------#
+tre = 0
+load('test.tre')
+cat('\nTiming a thousand simulations - small tree (par time 0.57s)...\n\t')
+t = system.time(replicate(1e3, genTree(tre, a=1)))
+cat(t[1])
+cat(' seconds\n')
+load('test_large.tre')
+cat('\nTiming a thousand simulations - large tree (par time 1.65s)...\n\t')
+t = system.time(replicate(1e3, genTree(tre, a=1)))
+cat(t[1])
+cat(' seconds\n')
+#-----------------------------------------------------------------#
+
+
+
+
+
+
+
+
+
 
 
 

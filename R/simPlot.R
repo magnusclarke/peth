@@ -115,11 +115,11 @@ simPlot	<- function(tree, a=0, sigma=1)
 		running[ which(length == 0) ]	<- F
 	}
 
-	plot(pdat[[1]]~ptime, pch=20, cex=0.1, type="p", ylim=c(-5, 5),
+	plot(pdat[[1]]~ptime, pch=20, cex=0.35, cxy=0.35, type="p", ylim=c(-7.5, 7.5),
 		, xlab="", ylab="", xaxt="n", yaxt="n")#, bty='n')
 	for(i in 2:node_count)
 	{
-		lines(pdat[[i]]~ptime, pch=20, cex=0.1, type="p")#, col=i)
+		lines(pdat[[i]]~ptime, pch=20, cex=0.35, cxy=0.35, type="p")#, col=i)
 	}
 	return(value[which(end %in% 1:node_count)])
 }
