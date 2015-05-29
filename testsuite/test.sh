@@ -1,1 +1,1 @@
-R --vanilla --silent < tester.R
+R --vanilla --silent < ../testsuite/tester.R

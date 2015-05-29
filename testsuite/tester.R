@@ -1,1 +1,1 @@
-source('test.R')
+source('../testsuite/test.R')

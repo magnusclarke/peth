@@ -1,12 +1,10 @@
-#include "Sim.h"	
+#include "Sim.h"
+#include <random>	
 
-/* RNG Seed: number cycles since processor on (assumed unique per core ) */
-unsigned long long rdtsc()
-{
-	unsigned int lo,hi;
-	__asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-        return ((unsigned long long)hi << 32) | lo;
-}
+/* 	RNG. Seeded from platform's random device.  */
+std::random_device rd;		
+std::mt19937 generator(rd());	
+std::normal_distribution<> distribution(0,1);
 
 void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, double *a, double *s, int *count, double *dt)
 {
@@ -14,11 +12,6 @@ void Sim::BMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 	Ntraits = *nt;	
 	double s2 = (*s) * (*s);
 	double s2_time = *count * s2;
-
-	// random numbers and random normal distribution
-	boost::mt19937_64 generator; 			
-	generator.seed(rdtsc());  
-	boost::normal_distribution<double> distribution;
 
 	for(int i=0; i < len; ++i)
 	{
@@ -33,11 +26,6 @@ void Sim::CEsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, do
 {
 	len = *l;
 	Ntraits = *nt;		
-
-	// random numbers and random normal distribution
-	boost::mt19937_64 generator; 			
-	generator.seed(rdtsc());  
-	boost::normal_distribution<double> distribution;
 
 	// Time loop
 	for(int j = 0; j < *count; j++) 
@@ -61,12 +49,6 @@ void Sim::LIMsim(std::vector<std::vector<double> > &run_vals, int *nt, int *l, d
 {
 	len = *l;
 	Ntraits = *nt;	
-
-	//double lim = 2;				// max size of deviation from zero.
-
-	boost::mt19937_64 generator; 			
-	generator.seed(rdtsc());  
-	boost::normal_distribution<double> distribution;
 
 	for(int j = 0; j < *count; j++) 
 	{

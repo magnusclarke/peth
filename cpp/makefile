@@ -10,4 +10,4 @@ TARGET = Rfunc_mac.so
 endif
 
 $(TARGET): Sim.h Sim.cpp Tree.h Tree.cpp Rfunc.cpp
-	g++ -m64 -fpic  -O3 -pipe -I/$(current_dir) -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -shared $^ -o $@
+	/opt/rh/devtoolset-2/root/usr/bin/g++ -m64 -fpic  -O3 -std=c++11 -pipe -I/$(current_dir) -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -shared $^ -o $@

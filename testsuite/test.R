@@ -52,8 +52,8 @@ if( length(dat[1,])==3 && length(dat2[1,])==6)
 #----------- Compare VCV matrices for test dataset ---------------#
 cat('Checking VCV matrices for test data... ')
 tre=0;dat=0
-load('test.tre')
-load('test.dat')
+load('../testsuite/test.tre')
+load('../testsuite/test.dat')
 testvcv = asVCV(tre)
 distance = sum(abs(vcv - testvcv))
 if(distance < 0){
@@ -99,37 +99,14 @@ test_lrt(lrt2)
 
 #----------- Simulation speed timer ------------------------------#
 tre = 0
-load('test.tre')
+load('../testsuite/test.tre')
 cat('\nTiming a thousand simulations - small tree (par time 0.57s)...\n\t')
 t = system.time(replicate(1e3, genTree(tre, a=1)))
 cat(t[1])
 cat(' seconds\n')
-load('test_large.tre')
+load('../testsuite/test_large.tre')
 cat('\nTiming a thousand simulations - large tree (par time 1.65s)...\n\t')
 t = system.time(replicate(1e3, genTree(tre, a=1)))
 cat(t[1])
 cat(' seconds\n')
 #-----------------------------------------------------------------#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

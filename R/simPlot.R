@@ -1,4 +1,3 @@
-
 # script to plot density dependent trees
 # sourced by den.R
 # slow and messy  -- just for plotting single simulations
@@ -14,25 +13,6 @@ P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime)
 		{
 			seg[i]	<- seg[i] + sigma*rnorm(1, 0, sqrt(dt)) 	# do BM evolution on seg
 		}
-
-		# i labels species ; SURELY WE SHOULD HAVE i AND j FOR EVERY SPECIES!!
-		# for(i in 1:(length(seg)-1))
-		# {
-		# 	q <- abs(seg[i] - seg[i+1])			#distance from species i to species i+1
-		# 	if(q <= 2.2) {
-		# 		pn = 0.1 * q * (4.4 - q)
-		# 	} else if (q>2.2 && q<2.6) {
-		# 		pn = 0.49
-		# 	} else if (q > 2.6) {
-		# 		pn = 0.50
-		# 	} else {
-		# 		pn = 0.50
-		# 	}
-		# 	g = 0.5 * dt * a * (0.5 - pn)		# interspecific effect, scaled with dt and a
-		# 	seg[i] = seg[i] - g					# species i gets pushed 'down' away from species i+1
-		# 	seg[i+1] = seg[i+1] + g				# species i+1 gets pushed 'up'
-		# }
-
 
 		for(i in 1:length(seg))
 		{
@@ -59,12 +39,10 @@ P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime)
 			}
 		}
 
-
 		stime <- stime + dt	
 		for(i in 1:length(seg))
 		{		
 			pdat[[i]] <- c(pdat[[i]], seg[i])		
-			#ptime <- c(ptime, stime)
 		}
 		if(length(seg) < node_count)
 		{

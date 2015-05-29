@@ -2,9 +2,6 @@
 #define __RUNSIM_H__
 
 #include <vector>
-#include "boost/random/mersenne_twister.hpp"
-#include "boost/random/normal_distribution.hpp"
-
 using std::vector;
 
 class Sim

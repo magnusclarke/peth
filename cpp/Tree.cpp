@@ -1,8 +1,16 @@
 #include "Tree.h"
 #include <vector>
-#include "boost/random/mersenne_twister.hpp"
-#include "boost/random/normal_distribution.hpp"
+#include <random>
+#include <cmath>
+
 using std::vector;
+
+/* 	RNG. Seeded from platform's random device.
+	These have to be labelled differently than those in Sim.cpp
+	to keep g++ happy. Not sure why.	  */
+std::random_device rd2;		
+std::mt19937 generator2(rd2());	
+std::normal_distribution<> distribution2(0,1);
 
 void Tree::setValues(int &x, int &y, int &nt, int start[], int en[], double len[], double tip[])
 {
@@ -52,11 +60,8 @@ void Tree::simulation(double &a, double &sigma, double &sigma2, double &dt, doub
 
 void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vector<int> &node, vector<vector<double> > &nodeVal, vector<vector<double> > &run_vals)
 {
-	boost::mt19937_64 generator; 			
-	generator.seed(rand()); 
-	boost::normal_distribution<double> distribution;
-
-	double nicheVar = s/sqrt(dt);		// variance of niche distribution. The parameter sigma controls this for the NF mdoel.
+	/* variance of niche distribution. The parameter sigma controls this for the NF model. */
+	double nicheVar = s/sqrt(dt);		
  
 	bool run[edge_count];
 	//int x=0;
@@ -65,9 +70,7 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 		if(st[i] == root){
 			run[i] = true;
 			// new vals get random value from niche distribution (1 trait only here)
-			//if(x%2==0)	vals[0][i] += nicheVar * distribution(generator);
-			vals[0][i] += nicheVar * distribution(generator);
-			//x = x+1;
+			vals[0][i] += nicheVar * distribution2(generator2);
 		} else {
 			run[i] = false;			
 		} 	
@@ -147,11 +150,14 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 							int use = 1;
 							while(use==1){
 								use = 0;
-								newNiche	= nicheVar * distribution(generator);
+								newNiche	= nicheVar * distribution2(generator2);
 								double difference = abs(newNiche - vals[k][i]);
 								for(int m=0; m < edge_count; m++)
 								{
-									if(abs(newNiche - vals[k][i]) < (difference-0.00001))		use = 1;
+									if(abs(newNiche - vals[k][i]) < (difference-0.00001))
+									{
+										use = 1;
+									}
 								}
 							}
 							vals[k][i] = newNiche;
@@ -162,11 +168,6 @@ void Tree::simNF(double &a, double &s, double &dt, double &lim, int &kernel, vec
 				}
 			}
 		}
-
-
-
-
-
 
 		// Stop branches running when they reach zero length.
 		for (int i = 0; i < edge_count; i++)
@@ -237,9 +238,7 @@ void Tree::simSeg(double &a, double &s, double &s2, double &dt, double &lim, int
 			segment.CEsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt);
 		} else if(kernel==2) {
 			segment.LIMsim(run_vals, &Ntraits, &l, &a, &rate, &count, &dt, &lim);
-		} //else if(kernel==4) {
-		// 	segment.RCsim(run_vals, &Ntraits, &l, &a, rate, &s2, &count, &dt, &lim);
-		// }
+		}
 		node_counter++;
 
 		int z = 0;
