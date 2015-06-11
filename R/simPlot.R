@@ -5,25 +5,60 @@
 
 P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime) 
 {
-	dt	<- 0.001
+	dt	<- 0.002
+	# Time loop; j labels time
 	for (j in 1:(time/dt)) 
 	{
+		# i labels species; seg is a vector of trait values
 		for (i in 1:length(seg)) 
 		{
-			seg[i]	<- seg[i] + sigma*rnorm(1, 0, sqrt(dt)) 
+			seg[i]	<- seg[i] + sigma*rnorm(1, 0, sqrt(dt)) 	# do BM evolution on seg
 		}
 
-		for(i in 1:(length(seg)-1))
+		# i labels species ; SURELY WE SHOULD HAVE i AND j FOR EVERY SPECIES!!
+		# for(i in 1:(length(seg)-1))
+		# {
+		# 	q <- abs(seg[i] - seg[i+1])			#distance from species i to species i+1
+		# 	if(q <= 2.2) {
+		# 		pn = 0.1 * q * (4.4 - q)
+		# 	} else if (q>2.2 && q<2.6) {
+		# 		pn = 0.49
+		# 	} else if (q > 2.6) {
+		# 		pn = 0.50
+		# 	} else {
+		# 		pn = 0.50
+		# 	}
+		# 	g = 0.5 * dt * a * (0.5 - pn)		# interspecific effect, scaled with dt and a
+		# 	seg[i] = seg[i] - g					# species i gets pushed 'down' away from species i+1
+		# 	seg[i+1] = seg[i+1] + g				# species i+1 gets pushed 'up'
+		# }
+
+
+		for(i in 1:length(seg))
 		{
-			q <- 0.5 * abs(seg[i] - seg[i+1])
-			if(q <= 2.2)		pn = 0.1 * q * (4.4 - q)
-			else if (q>2.2 && q<2.6)	pn = 0.49
-			else if (q > 2.6)	pn = 0.50
-			else			pn = 0.50
-			g = dt * a * (0.5 - pn)
-			seg[i] = seg[i] - g	
-			seg[i+1] = seg[i+1] + g	
+			for (k in 1:length(seg))
+			{
+				q <- abs(seg[i] - seg[k])			# distance from species i to species k
+				if(q <= 2.2) {
+					pn = 0.1 * q * (4.4 - q)
+				} else if (q>2.2 && q<2.6) {
+					pn = 0.49
+				} else if (q > 2.6) {
+					pn = 0.50
+				} else {
+					pn = 0.50
+				}
+				g = 0.5 * dt * a * (0.5 - pn)		# interspecific effect, scaled with dt and a
+				if(seg[i]>seg[k]){
+					seg[i] = seg[i] + g				# species i gets pushed away from species k
+					seg[k] = seg[k] - g				# species k gets pushed away from species i
+				} else if(seg[k]>=seg[i]){
+					seg[k] = seg[k] + g	
+					seg[i] = seg[i] - g	
+				}
+			}
 		}
+
 
 		stime <- stime + dt	
 		for(i in 1:length(seg))
@@ -80,17 +115,11 @@ simPlot	<- function(tree, a=0, sigma=1)
 		running[ which(length == 0) ]	<- F
 	}
 
-
-	# pplot <- data.frame(ptime, pdat) 	
-	# plot(pplot, pch=20, cex=0.25)		
-	plot(pdat[[1]]~ptime, pch=20, cex=0.1, type="p", ylim=c(-5*sigma*(1), 5*sigma*(1)),
-		, xlab="", ylab="", xaxt="n", yaxt="n")
+	plot(pdat[[1]]~ptime, pch=20, cex=0.35, cxy=0.35, type="p", ylim=c(-7.5, 7.5),
+		, xlab="", ylab="", xaxt="n", yaxt="n")#, bty='n')
 	for(i in 2:node_count)
 	{
-		lines(pdat[[i]]~ptime, pch=20, cex=0.1, type="p")#, col=i)
+		lines(pdat[[i]]~ptime, pch=20, cex=0.35, cxy=0.35, type="p")#, col=i)
 	}
 	return(value[which(end %in% 1:node_count)])
-
-	# return( length(pdat[[5]]) )
-	#return( length(ptime) )
 }
