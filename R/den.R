@@ -88,21 +88,20 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	Ngap					= apply(difs, 1, min, na.rm=T)
 
 	# Use summary statistics: mean and sd of gaps between neighbours
-    # if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))
-	if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) *	abs(sd(Dgap) - sd(Ngap)))
-    # if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap))^2 + abs(sd(Dgap) - sd(Ngap))^2 + abs(dataK - newK)^2)
+    if(sstat=="std") 	return( abs(mean(Dgap) - mean(Ngap)) * abs(sd(Dgap) - sd(Ngap)))
+	# if(sstat=="K")		return( (abs(mean(Dgap) - mean(Ngap)) + abs(sd(Dgap) - sd(Ngap)))  * abs(dataK - newK))
     if(sstat=="K")		return( abs(mean(Dgap) - mean(Ngap)) * abs(sd(Dgap) - sd(Ngap)) * abs(dataK - newK))
     if(sstat=="Kutsuk")	return( sum(abs(new - data)) )    # Kutsukake method: compare absolute values (slow)
 }
 
 LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F, file="sample.out", posteriorSize=500, sstat="std")
 {
-	if(kernel1=="CE" && kernel2=="BM")
-	{
-		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot, file=file, posteriorSize=posteriorSize, sstat=sstat) )
-	} else {
-		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, sigma2=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
-	}
+#if(kernel1=="CE" && kernel2=="BM")
+#	{
+		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot, file=file, posteriorSize=posteriorSize, sstat=sstat, kernel=kernel1) )
+#	} else {
+#		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, sigma2=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
+#	}
 }
 
 LRTfile = function(file="sample.out", posteriorSize=500, max=10, ntraits=1)
@@ -158,14 +157,17 @@ genLRT      = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA
    	}
 }
 
-nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std")
+nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std", kernel='CE')
 {
+
+    lim = max(abs(data))
 	# Simulate and write to file as we go. Single threaded.
-	for(i in 1:reps)
+for(i in 1:reps)
    	{
-   		sig 	= runif(1, min, max)
+ 		sig 	= runif(1, min, max)
    		atry 	= runif(1, min, max)
-  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim, sstat=sstat)
+  		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel=kernel, lim=lim, sstat=sstat)
+
 	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
    	}
 
@@ -175,16 +177,18 @@ nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, 
    	atry= x[,2]
    	dist= x[,3]
 
+
+
 	#----------- OLD MULTITHREADED BT MEMORY INTENSIVE METHOD---------------#
 	
-	# sig 	= runif(reps, min, max)
-	# atry    = runif(reps, min, max)
-	# H1_dist = 1:reps 				
+#	sig 	= runif(reps, min, max)
+#	atry    = runif(reps, min, max)
+#	H1_dist = 1:reps 				
 
-	# # Simulate and get distances to truth
-	# H1_dist = mcmapply(function(H1_dist, atry, sig) {
-	#    H1_dist = get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel="CE", lim=lim)
-	# }, H1_dist, atry, sig, mc.cores=cores)
+	# Simulate and get distances to truth
+#	H1_dist = mcmapply(function(H1_dist, atry, sig) {
+#	   H1_dist = get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel=kernel, lim=lim)
+#	}, H1_dist, atry, sig, mc.cores=cores)
 
 	#-----------------------------------------------------------------------#
 
