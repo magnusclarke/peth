@@ -75,8 +75,8 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
 	# Get Blomberg's K for first trait
     if(sstat=="K")
     {
-    dataK 	= Kcalc(data[,1], tree, F)  #dataK + Kcalc(data[,i], tree, F)
-    newK 	= Kcalc(new[,1], tree, F)  #newK  + Kcalc(new[,i], tree, F)
+    dataK 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)})  #dataK + Kcalc(data[,i], tree, F)
+    newK 	= tryCatch(Kcalc(new[,1], tree, F), error=function(err){return(1)})  #newK  + Kcalc(new[,i], tree, F)
     }
 	
     difs					= as.matrix(dist(data))			# euclidian distance

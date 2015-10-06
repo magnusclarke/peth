@@ -92,6 +92,7 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 	double sqrtDT_s 	= 0.5 * sqrt(*dt) / (*s);
 	double s_sqrtDT 	= (*s) / sqrt(*dt);
 	double dta 			= (*dt) * (*a);
+	double inv_s			= 1 / (*s);
 
 	for (int i=0; i < len; ++i) 
 	{
@@ -109,7 +110,9 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 			}
 
 			// The first factor scales (INVERSELY) the width of the resource-use curves; 2nd is distance
-			double q	= sqrtDT_s * sqrt(sumSqDist);
+			//double q	= sqrtDT_s * sqrt(sumSqDist);
+			//double q	= inv_s * sqrt(sumSqDist);
+			double q	= 0.5 * sqrt(sumSqDist);
 
 			// simple approximation to pnorm(q, 0, 1, FALSE, FALSE); good to 2dp
 			double pn;
@@ -126,8 +129,8 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 			{
 				for (int k = 0; k < Ntraits; ++k)
 				{
-					run_vals[k][i] += s_sqrtDT*g*(dists[k]/sumDist);
-					run_vals[k][j] -= s_sqrtDT*g*(dists[k]/sumDist);
+					run_vals[k][i] += 7 * (*s)*g*(dists[k]/sumDist);
+					run_vals[k][j] -= 7 * (*s)*g*(dists[k]/sumDist);
 				}
 			}
 		}
