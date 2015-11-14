@@ -122,15 +122,15 @@ void Sim::denSim(vector<vector<double> > &run_vals, double *a, double *s, double
 			else							{ pn = 0.50; }
 
             //double g = 0.5 * dta * (0.5-pn);
-			double g = 1 * dta * (0.5-pn);
+			double g = 2 * dta * (0.5-pn);		// factor of 2, so overlap varies from 0 to 1
 			
 			// Change in trait values, scaled by sigma
 			if(sumDist != 0)
 			{
 				for (int k = 0; k < Ntraits; ++k)
 				{
-					run_vals[k][i] += 7 * (*s)*g*(dists[k]/sumDist);
-					run_vals[k][j] -= 7 * (*s)*g*(dists[k]/sumDist);
+					run_vals[k][i] += (*s)*g*(dists[k]/sumDist);
+					run_vals[k][j] -= (*s)*g*(dists[k]/sumDist);
 				}
 			}
 		}

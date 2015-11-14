@@ -94,11 +94,11 @@ get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel=
     if(sstat=="Kutsuk")	return( sum(abs(new - data)) )    # Kutsukake method: compare absolute values (slow)
 }
 
-LRT 	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F, file="sample.out", posteriorSize=500, sstat="std")
+LRT 	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="CE", kernel2="BM", lim=5, plot=F, file="sample.out", posteriorSize=500, sstat="std")
 {
 #if(kernel1=="CE" && kernel2=="BM")
 #	{
-		return( nestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot, file=file, posteriorSize=posteriorSize, sstat=sstat, kernel=kernel1) )
+		return( nestedLRT(tree=tree, data=data, min=min, max_sigma=max_sigma, max_a=max_a, reps=reps, e=NA, a=NA, sigma=NA, dt=dt, plot=plot, file=file, posteriorSize=posteriorSize, sstat=sstat, kernel=kernel1) )
 #	} else {
 #		return( unnestedLRT(tree=tree, data=data, min=min, max=max, reps=reps, e=NA, a=NA, sigma=NA, sigma2=NA, dt=dt, kernel1=kernel1, kernel2=kernel2, lim=lim, plot=plot) )
 #	}
@@ -157,15 +157,20 @@ genLRT      = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA
    	}
 }
 
-nestedLRT	= function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std", kernel='CE')
+nestedLRT	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, e=NA, a=NA, sigma=NA, dt=1, lim=5, plot=FALSE, file="sample.out", posteriorSize=500, sstat="std", kernel='CE')
 {
+	if(file.exists(file))
+	{
+		print(paste(file, 'already exists!'))
+		return(c())
+	}
 
     lim = max(abs(data))
 	# Simulate and write to file as we go. Single threaded.
-for(i in 1:reps)
+	for(i in 1:reps)
    	{
- 		sig 	= runif(1, min, max)
-   		atry 	= runif(1, min, max)
+ 		sig 	= runif(1, min, max_sigma)
+   		atry 	= runif(1, min, max_a)
   		dist 	= get_dif(tree, data, atry, sig, sigma2="NA", dt=dt, kernel=kernel, lim=lim, sstat=sstat)
 
 	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
@@ -205,13 +210,16 @@ for(i in 1:reps)
 	H1_post[,1]	= Usig
 	H1_post[,2]	= Uatry
 
-	k 	= kde(H1_post, xmin=c(0, 0), xmax=c(max,max))
-	k0	= kde(H1_post, xmin=c(0, 0), xmax=c(max,0))		# sigma to max, a to 0.
+	error_bar_sig = sd(Usig)
+	error_bar_a	 = sd(Uatry)
+	error_bar = c(error_bar_sig, error_bar_a)
+
+	k 	= kde(H1_post, xmin=c(0, 0), xmax=c(max_sigma,max_a))
+	k0	= kde(H1_post, xmin=c(0, 0), xmax=c(max_sigma,0))		# sigma to max, a to 0.
 
 	k_max_index 	= which(k$estimate == max(k$estimate), arr.ind = TRUE)
 	H1_lik 			= k$estimate[k_max_index[1], k_max_index[2]]
 	H1_est 			= c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
-
 
 	k0_max_index	= which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
 	H0_lik 			= k0$estimate[k0_max_index[1], k0_max_index[2]]
@@ -221,7 +229,24 @@ for(i in 1:reps)
 
 	if(plot==TRUE)	plot(k, "persp")
 
-	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
+	#-------------------------- Get p-value --------------------------#
+
+	# Simulate with a=0, sigma=H0_est[1]. Get many distances between two BM datasets:
+	ds = replicate(reps, get_dif(tree, genTree(tree, a=0, sigma=best_sig), a=0, sigma=best_sig))
+
+	# Now get mean distance from observed data 'data' to BM sims
+	real_d = mean(replicate(reps, get_dif(tree, data, a=0, sigma=best_sig)))
+
+	# Now we just look to see what percentile of ds real_d falls on!
+	q = quantile(ds, seq(0, 1, by=0.01))
+	p = which.min( abs(real_d - q) )[[1]]-1
+	p = 100-p
+
+	#-----------------------------------------------------------------#
+
+	file.remove(file)
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT, error_bar, p) )
 }
 
 unnestedLRT   = function(tree, data, min=0, max=10, reps=1e3, e=NA, a=NA, sigma=NA, sigma2=NA, dt=1, kernel1="LIM", kernel2="BM", lim=5, plot=F)
