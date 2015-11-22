@@ -63,6 +63,42 @@ asVCV	= function(tree, a=0, sigma=1, reps=1e3, dt=1)
 	return( cov(x) )
 }
 
+get_ss = function(tree, a, sigma, force=FALSE, dt=1, kernel="CE", lim=0, nTraits=1, sstat="std") 
+{
+	new		= genTree(tree=tree, a=a, sigma=sigma, dt=dt, nTraits=nTraits, kernel=kernel, lim=lim)
+
+	# Get Blomberg's K for first trait
+    if(sstat=="K")
+    {
+	    newK 	= tryCatch(Kcalc(new[,1], tree, F), error=function(err){return(1)}) 
+    }
+
+	difs					= as.matrix(dist(new))			# euclidian distance
+	difs[which(difs==0)]	= NA							# ignore matrix diagonal
+	Ngap					= apply(difs, 1, min, na.rm=T)
+
+	# Return summary statistics: mean and sd of gaps between neighbours
+    if(sstat=="std") 	return( c( mean(Ngap), sd(Ngap) ) )
+    if(sstat=="K") 	return( c( mean(Dgap), sd(Dgap), newK) )
+}
+
+get_data_ss = function(tree, data, sstat="std") 
+{
+	# Get Blomberg's K for first trait
+    if(sstat=="K")
+    {
+	    newK 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)}) 
+    }
+
+	difs					= as.matrix(dist(data))			# euclidian distance
+	difs[which(difs==0)]	= NA							# ignore matrix diagonal
+	Ngap					= apply(difs, 1, min, na.rm=T)
+
+	# Return summary statistics: mean and sd of gaps between neighbours
+    if(sstat=="std") 	return( c( mean(Ngap), sd(Ngap) ) )
+    if(sstat=="K") 	return( c( mean(Dgap), sd(Dgap), newK) )
+}
+
 # obtain difference between data and a single simulated tree (for ABC not user)
 get_dif	= function(tree, data, a, sigma, sigma2="NA", force=FALSE, dt=1, kernel="CE", lim=0, nTraits=1, sstat="std") 
 {
@@ -229,18 +265,42 @@ nestedLRT	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, e=NA, a
 
 	if(plot==TRUE)	plot(k, "persp")
 
+	# #-------------------------- Get p-value --------------------------#
+
+	# # Simulate with a=0, sigma=H0_est[1]. Get many distances between two BM datasets:
+	# best_sig = H0_est[1]
+	# ds = replicate(1e3, get_dif(tree, genTree(tree, a=0, sigma=best_sig), a=0, sigma=best_sig))
+
+	# # Now get mean distance from observed data 'data' to BM sims
+	# real_d = mean(replicate(1e3, get_dif(tree, data, a=0, sigma=best_sig)))
+
+	# # Now we just look to see what percentile of ds real_d falls on!
+	# q = quantile(ds, seq(0, 1, by=0.01))
+	# p = which.min( abs(real_d - q) )[[1]]-1
+	# p = 100-p
+
+	# #-----------------------------------------------------------------#
+
 	#-------------------------- Get p-value --------------------------#
 
-	# Simulate with a=0, sigma=H0_est[1]. Get many distances between two BM datasets:
+	# Simulate with a=0, sigma=H0_est[1]. Get mean null summary stats.
 	best_sig = H0_est[1]
-	ds = replicate(reps, get_dif(tree, genTree(tree, a=0, sigma=best_sig), a=0, sigma=best_sig))
+	ds = replicate(1e3, get_ss(tree, a=0, sigma=best_sig))
+	ss1_mean = mean(ds[1,])
+	ss2_mean = mean(ds[2,])
+	dists1 = ds[1,] - ss1_mean
+	dists2 = ds[2,] - ss2_mean
+	dists = (abs(dists1) * abs(dists2))
 
-	# Now get mean distance from observed data 'data' to BM sims
-	real_d = mean(replicate(reps, get_dif(tree, data, a=0, sigma=best_sig)))
+	# Now get data summary stats
+	real_d = get_data_ss(tree, data)
+	real_dists1 = real_d[1] - ss1_mean
+	real_dists2 = real_d[2] - ss2_mean
+	dist_real_d = (abs(real_dists1)*abs(real_dists2))
 
 	# Now we just look to see what percentile of ds real_d falls on!
-	q = quantile(ds, seq(0, 1, by=0.01))
-	p = which.min( abs(real_d - q) )[[1]]-1
+	q = quantile(dists, seq(0, 1, by=0.01))
+	p = which.min( abs(dist_real_d - q) )[[1]]-1
 	p = 100-p
 
 	#-----------------------------------------------------------------#
