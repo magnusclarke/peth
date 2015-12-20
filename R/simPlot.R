@@ -3,9 +3,9 @@
 # sourced by den.R
 # slow and messy  -- just for plotting single simulations
 
-P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime) 
+P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime, kernel='CE', lim=5) 
 {
-	dt	<- 0.01
+	dt	<- 0.001
 	# Time loop; j labels time
 	for (j in 1:(time/dt)) 
 	{
@@ -13,6 +13,10 @@ P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime)
 		for (i in 1:length(seg)) 
 		{
 			seg[i]	<- seg[i] + sigma*rnorm(1, 0, sqrt(dt)) 	# do BM evolution on seg
+			if(kernel=='LIM'){
+				if (seg[i] > lim)	seg[i]=lim
+				if (seg[i] < -lim)	seg[i]=-lim
+			}
 		}
 
 		# i labels species ; SURELY WE SHOULD HAVE i AND j FOR EVERY SPECIES!!
@@ -48,7 +52,7 @@ P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime)
 				} else {
 					pn = 0.50
 				}
-				g = 0.5 * dt * a * (0.5 - pn)		# interspecific effect, scaled with dt and a
+				g = 2 * dt * a * (0.5 - pn)		# interspecific effect, scaled with dt and a
 				if(seg[i]>seg[k]){
 					seg[i] = seg[i] + g				# species i gets pushed away from species k
 					seg[k] = seg[k] - g				# species k gets pushed away from species i
@@ -79,7 +83,7 @@ P_runSim	<- function(node_count, seg, time, a, sigma, pdat, ptime, stime)
 }
 
 
-simPlot	<- function(tree, a=0, sigma=1) 
+simPlot	<- function(tree, a=0, sigma=1, kernel='CE', lim=5) 
 {
 	root_val<- 0
 
@@ -98,7 +102,7 @@ simPlot	<- function(tree, a=0, sigma=1)
 
 	while(any(running==T)){
 		time	<- min(length[ which(running == T) ]) 
-		runResult	<- P_runSim(node_count, value[which(running==T)], time, a, sigma, pdat, ptime, stime)	
+		runResult	<- P_runSim(node_count, value[which(running==T)], time, a, sigma, kernel=kernel, lim=lim, pdat, ptime, stime)	
 		pdat <- runResult[[2]]		
 		ptime <- runResult[[3]]	 
 		stime <- runResult[[4]]	
@@ -115,11 +119,11 @@ simPlot	<- function(tree, a=0, sigma=1)
 		running[ which(length == 0) ]	<- F
 	}
 
-	plot(pdat[[1]]~ptime, pch=20, cex=0.35, cxy=0.35, type="l", ylim=c(-7.5, 7.5),
-		, xlab="", ylab="", xaxt="n", yaxt="n")#, bty='n')
+	plot(pdat[[1]]~ptime, pch=20, cex=0.25, cxy=0.25, type="p", ylim=c(-7.5, 7.5),
+		, xlab="", ylab="", xaxt="n", yaxt="n", bty='n')
 	for(i in 2:node_count)
 	{
-		lines(pdat[[i]]~ptime, pch=20, cex=0.35, cxy=0.35, type="l")#, col=i)
+		lines(pdat[[i]]~ptime, pch=20, cex=0.25, cxy=0.25, type="p")#, col=i)
 	}
 	return(value[which(end %in% 1:node_count)])
 }
