@@ -233,10 +233,10 @@ nestedLRT	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, e=NA, a
 
 	# Simulate with a=0, sigma=H0_est[1]. Get many distances between two BM datasets:
 	best_sig = H0_est[1]
-	ds = replicate(reps, get_dif(tree, genTree(tree, a=0, sigma=best_sig), a=0, sigma=best_sig))
+	ds = replicate(1e4, get_dif(tree, genTree(tree, a=0, sigma=best_sig), a=0, sigma=best_sig))
 
 	# Now get mean distance from observed data 'data' to BM sims
-	real_d = mean(replicate(reps, get_dif(tree, data, a=0, sigma=best_sig)))
+	real_d = mean(replicate(1e4, get_dif(tree, data, a=0, sigma=best_sig)))
 
 	# Now we just look to see what percentile of ds real_d falls on!
 	q = quantile(ds, seq(0, 1, by=0.01))
