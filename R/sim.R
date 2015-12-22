@@ -1,11 +1,11 @@
-source('a2p.R')
-if(.Platform$pkgType == "mac.binary")	dyn.load("cpp/Rfunc_mac.so")
-if(.Platform$pkgType == "source")		dyn.load("cpp/Rfunc.so")
-
-tre = rUMT(5)
-t = ape2peth(tre)
+# functions to simulate density-dependent phylogenetic data
+# magnus
+# modified 2015
 
 require('ks')
+source('tree.R')
+if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
+if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 
 run = function(tree, dt=0.01, sigma=1, a=0)
 {
@@ -23,8 +23,6 @@ run = function(tree, dt=0.01, sigma=1, a=0)
 
 	return(result)
 }
-
-#-------------------- Old peth code: -----------------------------------#
 
 # tree must be a pethtree class object, or will throw bad_alloc!
 genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", lim=0) 
@@ -125,6 +123,3 @@ LRT	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, e=NA, a=NA, s
 
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
-
-
-

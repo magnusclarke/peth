@@ -3,7 +3,7 @@ options(warn=-1)        # Disable warning messages for whole script
 cat('Initialising peth test...')
 
 dir = getwd()
-suppressMessages(source('../path_cpp.R', chdir=T))
+suppressMessages(source('../R/sim.R', chdir=T))
 
 setwd(dir)
 cat('\n')
@@ -117,26 +117,3 @@ t = system.time(replicate(1e3, genTree(ptre, a=1)))
 cat(t[1])
 cat(' seconds\n')
 #-----------------------------------------------------------------#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
