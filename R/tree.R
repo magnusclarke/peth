@@ -1,9 +1,13 @@
+# Functions for converting ape-format phyogenies to
+# 'peth': a format better suited for time-forward simulation.
+# magnusclarke@gmail.com
+# modified 2015
+
 library(ape)
 library(TESS)
-# source('path.R')
 
 # random ultrametric tree
-rUMT	= function(nt, lambda=1, mu=0)
+rand_umt	= function(nt, lambda=1, mu=0)
 {
 	tree 	= sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	
 	return( tree[[1]] )
@@ -18,8 +22,8 @@ pethtree = function(map, dord, nts, tts)
 	invisible(out)
 }
 
-# Convert a tree in ape format to one in peth format (return a pethtree object)
-# Bug: only works for ntip > 4
+# Convert a tree in ape format to one in new format (return a new 'peth' tree object).
+# Only works for ntip > 4.
 ape2peth = function(tree)
 {
 	edge = tree$edge
@@ -57,7 +61,6 @@ ape2peth = function(tree)
 	{
 		# 'splitting' is the splitting node in ape format
 		# 'peth_split' is the splitting node in peth format
-		# There SHOULD only be one match in map[,1] (each element is unique)
 		peth_split = map[ which(map[,1] == splitting), 2 ][1]
 		nts = c(nts, peth_split)
 

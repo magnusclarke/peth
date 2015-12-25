@@ -1,6 +1,6 @@
 options(warn=-1)        # Disable warning messages for whole script
 
-cat('Initialising peth test...')
+cat('Initialising test...')
 
 dir = getwd()
 suppressMessages(source('../R/sim.R', chdir=T))
