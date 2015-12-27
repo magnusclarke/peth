@@ -137,6 +137,7 @@ genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE",
 }
 
 asVCV=as_vcv
+rUMT=rand_umt
 
 LRT = function(tree, data, a, sigma, dt=0.01, nTraits, kernel, lim, sstat, 
 			   reps, posteriorSize, max_sigma=5, max_a=5, min=0, file='sample.out')
