@@ -6,7 +6,7 @@
 library(ape)
 library(TESS)
 
-# random ultrametric tree
+# Random ultrametric tree
 rand_umt	= function(nt, lambda=1, mu=0)
 {
 	tree 	= sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	

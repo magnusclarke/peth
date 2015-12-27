@@ -41,11 +41,11 @@ class Sim
 
 public:
 	
-	// Trait values, one per species. Make this a vector of vectors for Ntraits>1.
-	vector<double> tval;		
+	// Trait values.
+	vector<double> tval;	
 
 	/*	Copy R's inputs into class data.  */
-	void set_values(double&, double&, double &a, double[], Tree&); 
+	void set_values(double&, double&, double &a, double[], Tree&, int &nt); 
 
 	/*	Perform simulation on whole tree, modifying and lengthening tvals.  */
 	void path();		

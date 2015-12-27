@@ -11,8 +11,16 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.01, sigma=1, a=0)
+sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
 {
+	if(class(tree)=="phylo")
+	{
+		tree = ape2peth(tree)
+	} else if(class(tree)!="pethtree")
+	{
+		stop("Tree incorrectly formatted.")
+	}
+
 	num_tips = length(tree$data_order)
 	splitting_nodes = tree$splitting_nodes - 1 		# R counts from 1; c counts from 0.
 	times = tree$times
@@ -20,9 +28,11 @@ sim = function(tree, dt=0.01, sigma=1, a=0)
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
-				splitters=as.integer(splitting_nodes), tval = as.double(tval)
+				splitters=as.integer(splitting_nodes), tval = as.double(tval),
+				ntraits=as.integer(ntraits)
 				)
-
+	
+	# result$tval = matrix(result$tval, ncol=ntraits)
 	result$tval = result$tval[tree$data_order]
 
 	return(result)
@@ -69,7 +79,8 @@ get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE)
 #--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
-lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01, file="sample.out", posteriorSize=500, use_K=FALSE)
+lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01, 
+	file="sample.out", posteriorSize=500, use_K=FALSE)
 {
 	if(file.exists(file))
 	{
@@ -92,7 +103,7 @@ lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01, file
    	atry= x[,2]
    	dist= x[,3]
 
-    # Get simulations from 500th smallest to smallest
+    # Get simulations from nth smallest to smallest
     H1_post		= order(dist)[1:posteriorSize]
 
     Usig		= sig[H1_post]
@@ -125,13 +136,12 @@ lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01, file
 }
 
 #--------------------------------------------------------------------------------------#
-#---------------------- Legacy functions ----------------------------------------------#
+#---------------------- Legacy functions. Don't use these. ----------------------------#
 #--------------------------------------------------------------------------------------#
 
-# tree must be a pethtree class object, or will throw bad_alloc!
 genTree	= function(tree, a=0, sigma=1, sigma2 = 1, dt=1, nTraits=1, kernel="CE", lim=0) 
 {
-	x = data.frame( sim(tree=tree, dt=0.01*dt, sigma=sigma, a=a)$tval )
+	x = data.frame( sim(tree=tree, dt=0.01*dt, sigma=sigma, a=a, ntraits=nTraits)$tval )
 	names(x) = 'traits'
 	return(x)
 }

@@ -108,10 +108,10 @@ double Sim::pnorm(double q)
 }
 
 /*  Copy all the parameters from R  */
-void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_intervals[], Tree &t)
+void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_intervals[], Tree &t, int &nt)
 {
 	tree = t;
-	num_traits = 1;						// This needs to become an int parameter.
+	num_traits = nt;
 	num_segment = tree.num_tips-1;
 
 	dt = r_dt;
@@ -126,12 +126,10 @@ void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_interval
 		segment_steps[i] = r_intervals[i] / dt;
 	}
 
-	/* Root trait value is zero. We start with a single trait vector for the root. */
+	/* Root trait value is zero. We start with a trait vector for the root. */
 	double root = 0;
-	vector<double> root_species;
-	root_species.assign(num_traits, root);		// one trait
-	tval.assign(1, root);		
-	
+	tval.assign(1, root);	
+
 	dists.assign (num_traits, 0);
 	sqDists.assign (num_traits, 0);
 }
