@@ -5,7 +5,8 @@
 #include "tree.h"
 #include "sim.h"
 
-extern "C" void pathsim(int &ntip, double &dt, double &rate, double &a, double r_intervals[], int splitters[], double trait_val[], int &nt)
+extern "C" void pathsim(int &ntip, double &dt, double &rate, double &a, double r_intervals[], 
+	int splitters[], double trait_val[], int &nt)
 {
 	/* -------------- INITIALISE TREE ----------------- */
 	Tree tree;
@@ -29,9 +30,19 @@ extern "C" void pathsim(int &ntip, double &dt, double &rate, double &a, double r
 	
 
 	/* -------------- RETURN VALS TO R ---------------- */
-	for (int i = 0; i < ntip; ++i)
+	// for (int i = 0; i < ntip; ++i)
+	// {
+	// 	trait_val[i] 	= sim.tval[i];
+	// }
+
+	// for (int j = 0; j < nt; ++j)
+	for(int i = 0; i < ntip; ++i)
 	{
-		trait_val[i] 	= sim.tval[i];
+		// for(int i = 0; i < ntip; ++i)
+		for (int j = 0; j < nt; ++j)
+		{
+			trait_val[j + i*nt] = sim.tval[i][j];
+		} 
 	}
 	/* ------------------------------------------------ */
 }

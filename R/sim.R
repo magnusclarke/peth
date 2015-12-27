@@ -24,7 +24,7 @@ sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
 	num_tips = length(tree$data_order)
 	splitting_nodes = tree$splitting_nodes - 1 		# R counts from 1; c counts from 0.
 	times = tree$times
-	tval = rep(0, num_tips)	
+	tval = rep(0, num_tips*ntraits)	
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
@@ -33,7 +33,22 @@ sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
 				)
 	
 	# result$tval = matrix(result$tval, ncol=ntraits)
-	result$tval = result$tval[tree$data_order]
+
+	tval = result$tval
+
+	ape_tval = matrix(ncol=ntraits, nrow=num_tips)
+	for (i in 1:ntraits) 
+	{
+		ape_tval[,i] = tval[seq(i, length(tval), by=ntraits)]
+		ape_tval[,i] = ape_tval[,i][tree$data_order]
+	}
+
+	result$tval = ape_tval
+
+	# for (i in 1:ntraits) 
+	# {
+	# 	result$tval[,i] = result$tval[,i][tree$data_order]
+	# }
 
 	return(result)
 }

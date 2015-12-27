@@ -42,7 +42,7 @@ class Sim
 public:
 	
 	// Trait values.
-	vector<double> tval;	
+	vector<vector<double>> tval;	
 
 	/*	Copy R's inputs into class data.  */
 	void set_values(double&, double&, double &a, double[], Tree&, int &nt); 
