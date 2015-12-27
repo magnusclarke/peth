@@ -32,8 +32,6 @@ sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
 				ntraits=as.integer(ntraits)
 				)
 	
-	# result$tval = matrix(result$tval, ncol=ntraits)
-
 	tval = result$tval
 
 	ape_tval = matrix(ncol=ntraits, nrow=num_tips)
@@ -44,11 +42,6 @@ sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
 	}
 
 	result$tval = ape_tval
-
-	# for (i in 1:ntraits) 
-	# {
-	# 	result$tval[,i] = result$tval[,i][tree$data_order]
-	# }
 
 	return(result)
 }
