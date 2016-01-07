@@ -9,7 +9,7 @@ library(TESS)
 # Random ultrametric tree
 rand_umt	= function(nt, lambda=1, mu=0)
 {
-	tree 	= sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	
+	tree 	= tess.sim.taxa(n=1, max = 50, nTaxa=nt, lambda=lambda, mu=mu)	# formerly sim.globalBiDe.taxa
 	return( tree[[1]] )
 }
 
