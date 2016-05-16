@@ -45,7 +45,10 @@ void Sim::step_segment()
 /* 	Do one evolutionary step on one species.  */
 void Sim::step_species(int &species)
 {
-	tval[species] += d(gen) * rate;		// BM
+	for (int i = 0; i < num_traits; ++i)
+	{
+		tval[species][i] += d(gen) * rate;		// BM
+	}
 	// Loop over species i that are interacting with this species.
 	for (int i = 0; i < num_species; ++i)
 	{	
@@ -68,8 +71,8 @@ void Sim::interaction(int s1, int s2)
 	{
 		for (int k = 0; k < num_traits; ++k)
 		{
-			tval[s1] += rate*g*(dists[k]/sumDist);	// Would also have k index if Ntraits > 1.
-			tval[s2] -= rate*g*(dists[k]/sumDist);
+			tval[s1][k] += rate*g*(dists[k]/sumDist);
+			tval[s2][k] -= rate*g*(dists[k]/sumDist);
 		}
 	}
 }
@@ -82,7 +85,7 @@ void Sim::update_distance(int s1, int s2)
 	/* Loop over traits and get trait distances between species s1 and s2. */
 	for (int trait = 0; trait < num_traits; ++trait)		
 	{
-		dists[trait]	= tval[s1] - tval[s2];
+		dists[trait]	= tval[s1][trait] - tval[s2][trait];
 		sqDists[trait]	= dists[trait]*dists[trait];
 		sumDist		+= std::abs(dists[trait]);
 		sumSqDist	+= sqDists[trait];
@@ -108,11 +111,13 @@ double Sim::pnorm(double q)
 }
 
 /*  Copy all the parameters from R  */
-void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_intervals[], Tree &t)
+void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_intervals[], Tree &t, int &nt)
 {
 	tree = t;
-	num_traits = 1;						// This needs to become an int parameter.
+	num_traits = nt;
 	num_segment = tree.num_tips-1;
+
+	// num_species = 1;
 
 	dt = r_dt;
 	a = r_a;
@@ -126,12 +131,12 @@ void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_interval
 		segment_steps[i] = r_intervals[i] / dt;
 	}
 
-	/* Root trait value is zero. We start with a single trait vector for the root. */
+	/* Root trait value is zero. We start with a trait vector for the root. */
 	double root = 0;
-	vector<double> root_species;
-	root_species.assign(num_traits, root);		// one trait
-	tval.assign(1, root);		
-	
+	std::vector<double> root_species;
+	root_species.assign (num_traits, root);
+	tval.assign(1, root_species);
+
 	dists.assign (num_traits, 0);
 	sqDists.assign (num_traits, 0);
 }
