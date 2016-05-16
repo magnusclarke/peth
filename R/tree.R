@@ -7,11 +7,18 @@ library(ape)
 library(TESS)
 
 # random ultrametric tree
-rand_umt	= function(nt, lambda=1, mu=0)
+rand_umt	= function(nt, lambda=1, mu=0, max=1e5)
 {
-	tree 	= sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)	
+	# TESS versions 1 and 2 have different unction names and parameters.
+	if(unlist (packageVersion('TESS'))[1] == 1)
+	{
+		tree = sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)
+	} else {
+		tree = tess.sim.taxa(n=1, nTaxa=nt, max=max, lambda=lambda, mu=mu)
+	}
 	return( tree[[1]] )
 }
+
 
 # Constructor for peth tree class
 pethtree = function(map, dord, nts, tts) 
@@ -118,3 +125,6 @@ ape2peth = function(tree)
 	ptree = pethtree(map, dord, nts, tts)
 	return(ptree)
 }
+
+# legacy functions
+rUMT = rand_umt

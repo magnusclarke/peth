@@ -11,7 +11,7 @@ extern "C" void pathsim(int &ntip, double &dt, double &rate, double &a, double r
 	Tree tree;
 	tree.num_tips = ntip;
 	tree.total_time = 0;
-	int n_interval = ntip - 1;
+	int n_interval = ntip-1;
 	tree.speciators.assign(n_interval, 0);
 	for(int i=0; i<n_interval; ++i)
 	{

@@ -13,6 +13,11 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--------------------------------------------------------------------------------------#
 sim = function(tree, dt=0.01, sigma=1, a=0)
 {
+	if(attributes(tree)$class == 'phylo')
+	{
+		tree = ape2peth(tree)
+	}
+
 	num_tips = length(tree$data_order)
 	splitting_nodes = tree$splitting_nodes - 1 		# R counts from 1; c counts from 0.
 	times = tree$times

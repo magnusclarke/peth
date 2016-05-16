@@ -28,7 +28,7 @@ check_dist = function(dat, kernel){
         cat('Error: distribution too non-normal!\n')
     }
 }
-tre = rUMT(1000)
+tre = rand_umt(1000)
 ptre = ape2peth(tre)
 datBM = genTree(ptre)$traits
 datCOMP = genTree(ptre, a=0, kernel='CE')$traits
@@ -40,7 +40,7 @@ check_dist(datLIM, 'Bounded competition')
 
 #----------- Check correct number of traits simulated ------------#
 cat('Checking trait data dimensionality... ')
-tre = rUMT(5)
+tre = rand_umt(5)
 ptre = ape2peth(tre)
 dat = genTree(ptre, nTraits=3)
 dat2 = genTree(ptre, a=5, nTraits=6)
