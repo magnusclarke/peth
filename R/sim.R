@@ -1,6 +1,6 @@
 # functions to simulate density-dependent phylogenetic data
 # magnusclarke@gmail.com
-# modified 2015
+# modified 2016
 
 require('ks')
 source('tree.R')
@@ -11,24 +11,31 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1)
+sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1, symp=NA)
 {
 	if(class(tree)=="phylo")
 	{
 		tree = ape2peth(tree)
-	} else if(class(tree)!="pethtree")
-	{
+	} else if(class(tree)!="pethtree") {
 		stop("Tree incorrectly formatted.")
 	}
+
 	num_tips = length(tree$data_order)
-	splitting_nodes = tree$splitting_nodes - 1 		# R counts from 1; c counts from 0.
+	splitting_nodes = tree$splitting_nodes - 1 	# R counts from 1; c counts from 0.
 	times = tree$times
 	tval = rep(0, num_tips*ntraits)	
+
+	if(all(is.na(symp)))
+	{
+		symp = replicate(num_tips^2, 0)
+	} else if(class(symp)=="matrix") {
+		symp = as.vector(symp)
+	}
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
 				splitters=as.integer(splitting_nodes), tval = as.double(tval),
-				ntraits=as.integer(ntraits)
+				ntraits=as.integer(ntraits), symp=as.double(symp)
 				)
 	
 	tval = result$tval

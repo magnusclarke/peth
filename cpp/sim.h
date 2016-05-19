@@ -17,11 +17,14 @@ class Sim
 	double dt;	
 	double a;
 	double rate; 						// BM sigma^2.
+	double time; 						// keep track of progression thru tree
 	double sumDist;						// Distance between two species in traitspace.
 	double sumSqDist;
 	vector<int> segment_steps; 			// Number of time steps in each segment.
 	vector<double> dists;
 	vector<double> sqDists;
+
+	vector<vector<double>> s;			// matrix of times lineages come into sympatry
 
 	/* 	Modify trait values for segment between speciation
 		events. Needs number of time steps within that segment 	*/
@@ -45,7 +48,7 @@ public:
 	vector<vector<double>> tval;	
 
 	/*	Copy R's inputs into class data.  */
-	void set_values(double&, double&, double &a, double[], Tree&, int &nt); 
+	void set_values(double&, double&, double &a, double[], Tree&, int &nt, double[]); 
 
 	/*	Perform simulation on whole tree, modifying and lengthening tvals.  */
 	void path();		

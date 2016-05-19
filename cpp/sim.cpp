@@ -40,6 +40,7 @@ void Sim::step_segment()
 	{
 		step_species(species);
 	}
+	time += dt;
 }
 
 /* 	Do one evolutionary step on one species.  */
@@ -49,10 +50,14 @@ void Sim::step_species(int &species)
 	{
 		tval[species][i] += d(gen) * rate;		// BM
 	}
+
 	// Loop over species i that are interacting with this species.
 	for (int i = 0; i < num_species; ++i)
 	{	
-		interaction(species, i);
+		if(time > s[species][i])
+		{
+			interaction(species, i);
+		}
 	}
 }
 
@@ -111,13 +116,26 @@ double Sim::pnorm(double q)
 }
 
 /*  Copy all the parameters from R  */
-void Sim::set_values(double &r_dt, double &r_rate,double &r_a, double r_intervals[], Tree &t, int &nt)
+void Sim::set_values(double &r_dt, double &r_rate,double &r_a, 
+					double r_intervals[], Tree &t, int &nt, double symp[])
 {
 	tree = t;
 	num_traits = nt;
 	num_segment = tree.num_tips-1;
 
-	// num_species = 1;
+	time = 0;
+
+	std::vector<double> x;
+	x.assign (tree.num_tips, 0);
+	s.assign(tree.num_tips, x);
+
+	for (int i = 0; i < tree.num_tips; ++i)
+	{
+		for (int j = 0; j < tree.num_tips; ++j)
+		{
+			s[i][j] = symp[i*tree.num_tips + j]	;
+		}
+	}
 
 	dt = r_dt;
 	a = r_a;
