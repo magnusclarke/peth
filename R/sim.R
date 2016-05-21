@@ -11,7 +11,7 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1, symp=NA)
+sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA)
 {
 	if(class(tree)=="phylo")
 	{
@@ -49,8 +49,53 @@ sim = function(tree, dt=0.01, sigma=1, a=0, ntraits=1, symp=NA)
 
 	result$tval = ape_tval
 
+	result$symp = NULL
+
 	return(result)
 }
+
+#--------------------------------------------------------------------------------------#
+#--- Generate a matrix of the times at which lineages come into sympatry. -------------#
+#--------------------------------------------------------------------------------------#
+symp_matrix = function(tree, delay=0)
+{
+	if(class(tree)=="phylo")
+	{
+		t = ape2peth(tree)
+	} else if(class(tree)!="pethtree") {
+		stop("Tree incorrectly formatted.")
+	} else {
+		t = tree
+	}
+
+	ntip = length(t$data_order)
+	s = matrix(nrow=ntip, ncol=ntip, 0)
+	if(class(tree)=="phylo")
+	{
+		rownames(s) = colnames(s) = tree$tip.label
+	}
+
+	# find ages (time from root) of tip lineages
+	age = 1:ntip
+	age[1]=age[2]=0
+	for(i in 1:ntip)
+	{
+		age[i+2] = sum(t$times[1:i])
+	}
+	age = age[t$data_order]
+
+	# apply starttimes and delay to symp-matrix s
+	for (i in 1:ntip) 
+	{
+		for (j in 1:ntip)
+		{
+			s[i,j] = max(c(age[i], age[j])) + delay
+		}
+	}
+	return(s)
+}
+
+
 
 #--------------------------------------------------------------------------------------#
 #---------- Generate vcv-matrix of simulated trees. -----------------------------------#
