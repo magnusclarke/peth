@@ -95,8 +95,6 @@ symp_matrix = function(tree, delay=0)
 	return(s)
 }
 
-
-
 #--------------------------------------------------------------------------------------#
 #---------- Generate vcv-matrix of simulated trees. -----------------------------------#
 #--------------------------------------------------------------------------------------#
@@ -109,12 +107,12 @@ as_vcv	= function(tree, sigma=1, a=0, reps=1e4, dt=0.01)
 #--------------------------------------------------------------------------------------#
 #---- Get difference between given data and a single simulated dataset. ---------------#
 #--------------------------------------------------------------------------------------#
-get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE) 
+get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE, symp) 
 {
 	ntips	= length(data[,1])
 	nTraits	= length(data[1,])
 
-	new		= genTree(tree=tree, a=a, sigma=sigma, dt=dt, nTraits=nTraits)
+	new		= sim(tree=tree, a=a, sigma=sigma, dt=dt, ntraits=nTraits, symp=symp)$tval
 	
     difs					= as.matrix(dist(data))			# Euclidian distance
 	difs[which(difs==0)]	= NA							# Ignore matrix diagonal
@@ -124,7 +122,7 @@ get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE)
 	difs[which(difs==0)]	= NA						
 	Ngap					= apply(difs, 1, min, na.rm=T)
 
-	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K if true.
+	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
     if(use_K)
     {
 		dataK 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)})
@@ -138,8 +136,8 @@ get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE)
 #--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
-lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01, 
-	file="sample.out", posteriorSize=500, use_K=FALSE)
+lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.001, 
+	file="sample.out", posteriorSize=500, use_K=FALSE, symp=NA)
 {
 	if(file.exists(file))
 	{
@@ -152,7 +150,7 @@ lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.01,
    	{
  		sig 	= runif(1, min, max_sigma)
    		atry 	= runif(1, min, max_a)
-  		dist 	= get_dif(tree, data, atry, sig, dt=dt, use_K=use_K)
+  		dist 	= get_dif(tree, data, atry, sig, dt=dt, use_K=use_K, symp=symp)
 	   	write(c(sig, atry, dist), file=file, append=TRUE, sep=",")
    	}
 
