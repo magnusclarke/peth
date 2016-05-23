@@ -134,9 +134,97 @@ get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE, symp)
 }
 
 #--------------------------------------------------------------------------------------#
+#-------- Get summary statistics for a given tree and dataset -------------------------#
+#--------------------------------------------------------------------------------------#
+summary_stats = function(tree, data, use_K=FALSE)
+{
+	difs = as.matrix(dist(data))			# Euclidian distance
+	difs[which(difs==0)] = NA				# Ignore matrix diagonal
+	gap	= apply(difs, 1, min, na.rm=T)	
+
+	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
+	if(use_K)
+	{
+		k 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)})
+		stats = c(mean(gap), sd(gap), k)
+	} else {
+		stats = c(mean(gap), sd(gap) )
+	}
+	return( stats )
+}
+
+#--------------------------------------------------------------------------------------#
+#-------- Generate file with many simulation parameters and summary statistics --------#
+#--------------------------------------------------------------------------------------#
+param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_a=8, symp=NA, dt=0.001, use_K=FALSE)
+{
+	sig = runif(reps, 0, max_sigma)
+	atry = runif(reps, 0, max_a)
+
+	for(i in 1:reps)
+	{
+		d = sim(tree=tree, a=atry[i], sigma=sig[i], dt=dt, ntraits=1, symp=symp)$tval
+		stats = summary_stats(tree=tree, data=d, use_K=use_K)
+	   	write(c(sig[i], atry[i], stats), file=file, append=TRUE, sep=",")
+	}
+}
+
+#--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
-lrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.001, 
+lrt	= function(tree, data, file="param_stats.out", posteriorSize=500, use_K=FALSE, dt=0.001, symp=NA)
+{
+   	# Read simulations into R
+   	x 	= read.csv(file)
+   	sig = x[,1]
+   	atry = x[,2]
+   	stat1 = x[,3]
+   	stat2 = x[,4]
+
+	# Get summary stats for the true data
+	tstat = summary_stats(tree=tree, data=data, use_K=use_K)
+	tstat1 = tstat[1]
+	tstat2 = tstat[2]
+
+	if(use_K)
+	{
+		stat3 = x[,5]
+		tstat3 = tstat[3]
+		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) * abs(stat3 - tstat3)
+	} else {
+		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) 
+	}
+
+    # Get simulations from nth smallest to smallest
+    H1_post		= order(diff)[1:posteriorSize]
+
+    Usig		= sig[H1_post]
+	Uatry		= atry[H1_post]
+	H1_post		= matrix(ncol=2, nrow=length(Usig))
+	H1_post[,1]	= Usig
+	H1_post[,2]	= Uatry
+
+	k 	= kde(H1_post, xmin=c(0, 0), xmax=c(max_sigma,max_a))
+	k0	= kde(H1_post, xmin=c(0, 0), xmax=c(max_sigma,0))		# sigma to max, a to 0.
+
+	# Use kernel smoothing to estimate likelihood maxima with and without competition.
+	k_max_index 	= which(k$estimate == max(k$estimate), arr.ind = TRUE)
+	H1_lik 			= k$estimate[k_max_index[1], k_max_index[2]]
+	H1_est 			= c(unlist(k$eval.points)[k_max_index[1]], unlist(k$eval.points)[length(k$estimate[,1]) + k_max_index[2]])
+
+	k0_max_index	= which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+	H0_lik 			= k0$estimate[k0_max_index[1], k0_max_index[2]]
+	H0_est 			= c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	LRT				= -2 * log( H0_lik / H1_lik )
+
+	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
+}
+
+#--------------------------------------------------------------------------------------#
+#---------- Likelihood ratio: BM versus competition -----------------------------------#
+#--------------------------------------------------------------------------------------#
+oldlrt	= function(tree, data, min=0, max_sigma=10, max_a=5, reps=1e3, dt=0.001, 
 	file="sample.out", posteriorSize=500, use_K=FALSE, symp=NA)
 {
 	if(file.exists(file))
