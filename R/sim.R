@@ -172,10 +172,15 @@ param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_
 #--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
-lrt	= function(tree, data, file="param_stats.out", posteriorSize=500, use_K=FALSE, dt=0.001, symp=NA)
+lrt	= function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, dt=0.001, max_sigma=8, max_a=8, sim_dat=NA)
 {
    	# Read simulations into R
-   	x 	= read.csv(file)
+	if(is.na(sim_dat))
+	{
+		x 	= read.csv(file)
+	} else {
+		x = sim_dat
+	}
    	sig = x[,1]
    	atry = x[,2]
    	stat1 = x[,3]
