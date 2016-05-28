@@ -76,8 +76,8 @@ void Sim::interaction(int s1, int s2)
 	{
 		for (int k = 0; k < num_traits; ++k)
 		{
-			tval[s1][k] += rate*g*(dists[k]/sumDist);
-			tval[s2][k] -= rate*g*(dists[k]/sumDist);
+			tval[s1][k] += g*(dists[k]/sumDist); //rate*g*(dists[k]/sumDist);
+			tval[s2][k] -= g*(dists[k]/sumDist); //rate*g*(dists[k]/sumDist);
 		}
 	}
 }
