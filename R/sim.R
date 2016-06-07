@@ -82,7 +82,7 @@ symp_matrix = function(tree, delay=0)
 	{
 		age[i+2] = sum(t$times[1:i])
 	}
-	age = age[t$data_order]
+	# age = age[t$data_order]
 
 	# apply starttimes and delay to symp-matrix s
 	for (i in 1:ntip) 
