@@ -3,6 +3,7 @@
 # modified 2016
 
 require('ks')
+require('picante')
 source('tree.R')
 if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
@@ -145,7 +146,7 @@ summary_stats = function(tree, data, use_K=FALSE)
 	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
 	if(use_K)
 	{
-		k 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)})
+		k 	= tryCatch(Kcalc(data, tree, F), error=function(err){return(1)})
 		stats = c(mean(gap), sd(gap), k)
 	} else {
 		stats = c(mean(gap), sd(gap) )
@@ -250,7 +251,7 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 
 	if(use_K)
 	{
-		stat3 = x[,5]
+		stat3 = x[,6]
 		tstat3 = tstat[3]
 		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) * abs(stat3 - tstat3)
 	} else {
@@ -280,12 +281,12 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 
 	#------------------------------
 
-    sig1 = sig[which(model==nullh)]
-   	param1 = param[which(model==nullh)]
-   	stat11 = stat1[which(model==nullh)]
-   	stat21 = stat2[which(model==nullh)]
-   	model1 = model[which(model==nullh)]
-   	diff1 = diff[which(model==nullh)]
+    sig1 = sig[which(model=='comp')]
+   	param1 = param[which(model=='comp')]
+   	stat11 = stat1[which(model=='comp')]
+   	stat21 = stat2[which(model=='comp')]
+   	model1 = model[which(model=='comp')]
+   	diff1 = diff[which(model=='comp')]
     H1_post = order(diff1)[1:posteriorSize]
 
     Usig1		= sig[H1_post]
@@ -321,7 +322,12 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 		}
 	}
 
-	d0 = matrix(nrow=reps, ncol=3)
+	if(use_K)
+	{
+		d0 = matrix(nrow=reps, ncol=4)
+	} else {
+		d0 = matrix(nrow=reps, ncol=3)
+	}
 	for(i in 1:reps)
 	{
 		if(nullh=='EB')
@@ -333,8 +339,12 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 			d = rTraitCont(tree, model='OU', sigma=H0_est[1], alpha=H0_est[2])
 		}
 		s = summary_stats(tree=tree, data=d, use_K=use_K)
-		d0[i,1:2] = s
+		d0[i,1:2] = s[1:2]
 		d0[i,3] = nullh
+		if(use_K)
+		{
+			d0[i,4] = s[3]
+		}
 	}
 
    	newstat1 = as.numeric( c( d0[,1], d1[,1] ) )
@@ -343,14 +353,14 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 
 	if(use_K)
 	{
-		stat3 = c( d0[,4], d1[,4] )
-		newdiff = abs(newstat1-tstat1)  * abs(newstat2-tstat2) * abs(stat3 - tstat3)
+		newstat3 = as.numeric( c( d0[,4], d1[,4] ) )
+		newdiff = abs(newstat1-tstat1)  * abs(newstat2-tstat2) * abs(newstat3 - tstat3)
 	} else {
 		newdiff = abs(newstat1-tstat1)  * abs(newstat2-tstat2) 
 	}
 
     # Get simulations from nth smallest distance to smallest
-    newposterior = order(newdiff)[1:posteriorSize]
+    newposterior = order(newdiff)[1:100]
 
     # number of null sims in posterior
     H0_lik = length(which(newmodel[newposterior]==nullh))
