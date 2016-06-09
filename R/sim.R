@@ -226,6 +226,153 @@ lrt	= function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, dt=0.001, ma
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
 
+
+lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, reps=1e4,
+						dt=0.001, max_sigma=8, max_a=8, min_param=0, max_param=8, prior=NA, nullh='EB')
+{
+   	# Read simulations into R
+	if(is.na(prior))
+	{
+		x 	= read.csv(file)
+	} else {
+		x = prior
+	}
+   	sig = x[,1]
+   	param = x[,2]
+   	stat1 = x[,3]
+   	stat2 = x[,4]
+   	model = x[,5]
+
+	# Get summary stats for the true data
+	tstat = summary_stats(tree=tree, data=data, use_K=use_K)
+	tstat1 = tstat[1]
+	tstat2 = tstat[2]
+
+	if(use_K)
+	{
+		stat3 = x[,5]
+		tstat3 = tstat[3]
+		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) * abs(stat3 - tstat3)
+	} else {
+		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) 
+	}
+
+    #-------- Now, generate separate posteriors for H0 and H1, and estimate params
+    sig0 = sig[which(model==nullh)]
+   	param0 = param[which(model==nullh)]
+   	stat10 = stat1[which(model==nullh)]
+   	stat20 = stat2[which(model==nullh)]
+   	model0 = model[which(model==nullh)]
+   	diff0 = diff[which(model==nullh)]
+    H0_post = order(diff0)[1:posteriorSize]
+
+    Usig		= sig[H0_post]
+	Uparam		= param[H0_post]
+	H0_post		= matrix(ncol=2, nrow=length(Usig))
+	H0_post[,1]	= Usig
+	H0_post[,2]	= Uparam
+
+	k0 	= kde(H0_post, xmin=c(0, min_param), xmax=c(max_sigma,max_param))
+
+	# Use kernel smoothing to estimate likelihood maxima.
+	k0_max_index 	= which(k0$estimate == max(k0$estimate), arr.ind = TRUE)
+	H0_est 			= c(unlist(k0$eval.points)[k0_max_index[1]], unlist(k0$eval.points)[length(k0$estimate[,1]) + k0_max_index[2]])
+
+	#------------------------------
+
+    sig1 = sig[which(model==nullh)]
+   	param1 = param[which(model==nullh)]
+   	stat11 = stat1[which(model==nullh)]
+   	stat21 = stat2[which(model==nullh)]
+   	model1 = model[which(model==nullh)]
+   	diff1 = diff[which(model==nullh)]
+    H1_post = order(diff1)[1:posteriorSize]
+
+    Usig1		= sig[H1_post]
+	Uparam1		= param[H1_post]
+	H1_post		= matrix(ncol=2, nrow=length(Usig1))
+	H1_post[,1]	= Usig1
+	H1_post[,2]	= Uparam1
+
+	k1 	= kde(H1_post, xmin=c(0, 0), xmax=c(max_sigma,max_a))
+
+	# Use kernel smoothing to estimate likelihood maxima.
+	k1_max_index 	= which(k1$estimate == max(k1$estimate), arr.ind = TRUE)
+	H1_est 			= c(unlist(k1$eval.points)[k1_max_index[1]], unlist(k1$eval.points)[length(k1$estimate[,1]) + k1_max_index[2]])
+
+	#----- Generate new datasets using fitted models
+
+	if(use_K)
+	{
+		d1 = matrix(nrow=reps, ncol=4)
+	} else {
+		d1 = matrix(nrow=reps, ncol=3)
+	}
+
+	for(i in 1:reps)
+	{
+		d = sim(tree=tree, a=H1_est[2], sigma=H1_est[1])$tval
+		s = summary_stats(tree=tree, data=d, use_K=use_K)
+		d1[i,1:2] = s[1:2]
+		d1[i,3] = 'comp'
+		if(use_K)
+		{
+			d1[i,4] = s[3]
+		}
+	}
+
+	d0 = matrix(nrow=reps, ncol=3)
+	for(i in 1:reps)
+	{
+		if(nullh=='EB')
+		{
+			# get transformed tree here
+			d = rTraitCont(transformed_tree, model='BM')
+		} else if(nullh=='OU')
+		{
+			d = rTraitCont(tree, model='OU', sigma=H0_est[1], alpha=H0_est[2])
+		}
+		s = summary_stats(tree=tree, data=d, use_K=use_K)
+		d0[i,1:2] = s
+		d0[i,3] = nullh
+	}
+
+   	newstat1 = as.numeric( c( d0[,1], d1[,1] ) )
+   	newstat2 = as.numeric( c( d0[,2], d1[,2] ) )
+   	newmodel = c( d0[,3], d1[,3] )
+
+	if(use_K)
+	{
+		stat3 = c( d0[,4], d1[,4] )
+		newdiff = abs(newstat1-tstat1)  * abs(newstat2-tstat2) * abs(stat3 - tstat3)
+	} else {
+		newdiff = abs(newstat1-tstat1)  * abs(newstat2-tstat2) 
+	}
+
+    # Get simulations from nth smallest distance to smallest
+    newposterior = order(newdiff)[1:posteriorSize]
+
+    # number of null sims in posterior
+    H0_lik = length(which(newmodel[newposterior]==nullh))
+
+    # number of alternate sims in posterior
+    H1_lik = length(which(newmodel[newposterior]=='comp'))
+
+    LRTstat = -2 * log(H0_lik / H1_lik)
+
+	return( data.frame(H0_est, H1_est, LRTstat) )
+}
+
+
+
+
+
+
+
+
+
+
+
 #--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
@@ -307,3 +454,6 @@ LRT = function(tree, data, a, sigma, dt=0.01, nTraits, kernel, lim, sstat,
 }
 
 #--------------------------------------------------------------------------------------#
+
+
+
