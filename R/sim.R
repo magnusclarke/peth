@@ -229,7 +229,7 @@ lrt	= function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, dt=0.001, ma
 
 
 lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, reps=1e4,
-						dt=0.001, max_sigma=8, max_a=8, min_param=0, max_param=8, prior=NA, nullh='EB')
+						dt=0.001, max_sigma=8, max_a=8, min_param=0, max_param=8, prior=NA, nullh='EB', post2=100)
 {
    	# Read simulations into R
 	if(is.na(prior))
@@ -332,8 +332,8 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 	{
 		if(nullh=='EB')
 		{
-			# get transformed tree here
-			d = rTraitCont(transformed_tree, model='BM')
+			transformed_tree = transf.branch.lengths(tree, model='EB', parameters=list(rate=H0_est[2]))$tree
+			d = rTraitCont(transformed_tree, model='BM', sigma=H0_est[1])
 		} else if(nullh=='OU')
 		{
 			d = rTraitCont(tree, model='OU', sigma=H0_est[1], alpha=H0_est[2])
@@ -360,7 +360,7 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 	}
 
     # Get simulations from nth smallest distance to smallest
-    newposterior = order(newdiff)[1:100]
+    newposterior = order(newdiff)[1:post2]
 
     # number of null sims in posterior
     H0_lik = length(which(newmodel[newposterior]==nullh))
