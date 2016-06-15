@@ -25,6 +25,7 @@ class Sim
 	vector<double> sqDists;
 
 	vector<vector<double>> s;			// matrix of times lineages come into sympatry
+	vector<vector<double>> al;			// matrix of times lineages leave sympatry
 
 	/* 	Modify trait values for segment between speciation
 		events. Needs number of time steps within that segment 	*/
@@ -48,7 +49,7 @@ public:
 	vector<vector<double>> tval;	
 
 	/*	Copy R's inputs into class data.  */
-	void set_values(double&, double&, double &a, double[], Tree&, int &nt, double[]); 
+	void set_values(double&, double&, double &a, double[], Tree&, int &nt, double[], double[]); 
 
 	/*	Perform simulation on whole tree, modifying and lengthening tvals.  */
 	void path();		

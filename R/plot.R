@@ -18,9 +18,7 @@ cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
 
 ##---------------------------------------------------------------#
 
-tre = rand_umt(12)
-
-sim = function(tre, deltat=0.0025, sigma=1, a=0, ntraits=1, symp=NA, plotlim=7)
+plotsim = function(tre, deltat=0.0025, sigma=1, a=0, ntraits=1, symp=NA, plot=TRUE, plotlim=7, limit=NA, alpha=0)
 {
 	if(class(tre)=="phylo")
 	{
@@ -34,6 +32,8 @@ sim = function(tre, deltat=0.0025, sigma=1, a=0, ntraits=1, symp=NA, plotlim=7)
 	times = tree$times
 
 	subclades=FALSE
+
+	myalpha <<- alpha
 
 	if(all(is.na(symp)))
 	{
@@ -63,29 +63,33 @@ sim = function(tre, deltat=0.0025, sigma=1, a=0, ntraits=1, symp=NA, plotlim=7)
 	result = pathsim(tre=tre, ntip=as.integer(num_tips), deltat=as.double(deltat), 
 				rate = as.double(sigma^2), a=as.double(a), intervals=as.double(times), 
 				splitters=as.integer(splitting_nodes),
-				ntraits=as.integer(ntraits), symp=symp
+				ntraits=as.integer(ntraits), symp=symp, limit=limit
 				)
 	
+	plotlim = max(abs(pdat), na.rm=TRUE)
 
-	plot(pdat[,1], pch=20, cex=0.25, cxy=0.25, type="l", ylim=c(-plotlim, plotlim),
-		, xlab="", ylab="", xaxt="n", yaxt="n", bty='n', col=cbPalette[1])
-
-	if(subclades==TRUE)
+	if(plot==TRUE)
 	{
-		for(i in sub2[-1])
-		{
-			lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[1])
-		}
+		plot(pdat[,1], pch=20, cex=0.25, cxy=0.25, type="l", ylim=c(-plotlim, plotlim),
+			, xlab="", ylab="", xaxt="n", yaxt="n", bty='n', col=cbPalette[1])
 
-		for(i in sub1)
+		if(subclades==TRUE)
 		{
-			lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[2])
+			for(i in sub2[-1])
+			{
+				lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[1])
+			}
+
+			for(i in sub1)
+			{
+				lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[2])
+			}
+		} else {
+			for(i in 2:num_tips)
+			{
+				lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[i%%7+1])
+			}			
 		}
-	} else {
-		for(i in 2:num_tips)
-		{
-			lines(pdat[,i], pch=20, cex=0.25, cxy=0.25, type="l", col=cbPalette[i%%8])
-		}			
 	}
 
 
@@ -148,7 +152,7 @@ d = function()
 }
 
 # get simulation
-pathsim = function(tre, ntip, deltat, rate, a, intervals, splitters, ntraits, symp)
+pathsim = function(tre, ntip, deltat, rate, a, intervals, splitters, ntraits, symp, limit)
 {
 	num_segment  <<-ntip-1
 	mydt <<- deltat
@@ -156,6 +160,8 @@ pathsim = function(tre, ntip, deltat, rate, a, intervals, splitters, ntraits, sy
 	mysymp <<- symp / mydt 	# mysymp measured in timestep units
 
 	tree_speciators <<- splitters
+
+	lim <<- limit
 
 	mya <<- a
 
@@ -219,7 +225,7 @@ step_segment = function()
 # Do one evolutionary step on one species. 
 step_species = function(species)
 {
-	tval[species] <<- tval[species] + d() * rate		# BM
+	tval[species] <<- tval[species] + d() * rate - myalpha * tval[species] * mydt		# OU
 	
 	# Loop over species i that are interacting with this species.
 	for (i in 1:num_species)
@@ -227,6 +233,19 @@ step_species = function(species)
 		if(mytime > mysymp[species,i])
 		{
 			interaction(species, i)
+		}
+	}
+
+	if(!is.na(lim))
+	{
+		if(tval[species] > lim)
+		{
+			tval[species] <<- lim 
+		}
+
+		if(tval[species] < -lim)
+		{
+			tval[species] <<- -lim 
 		}
 	}
 }

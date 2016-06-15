@@ -12,7 +12,7 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA)
+sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA)
 {
 	if(class(tree)=="phylo")
 	{
@@ -29,14 +29,16 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA)
 	if(all(is.na(symp)))
 	{
 		symp = replicate(num_tips^2, 0)
+		allo = replicate(num_tips^2, 9e9)
 	} else if(class(symp)=="matrix") {
 		symp = as.vector(symp)
+		allo = as.vector(allo)
 	}
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
 				splitters=as.integer(splitting_nodes), tval = as.double(tval),
-				ntraits=as.integer(ntraits), symp=as.double(symp)
+				ntraits=as.integer(ntraits), symp=as.double(symp), allo=as.double(allo)
 				)
 	
 	tval = result$tval
@@ -51,6 +53,7 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA)
 	result$tval = ape_tval
 
 	result$symp = NULL
+	result$allo = NULL
 
 	return(result)
 }
@@ -157,14 +160,15 @@ summary_stats = function(tree, data, use_K=FALSE)
 #--------------------------------------------------------------------------------------#
 #-------- Generate file with many simulation parameters and summary statistics --------#
 #--------------------------------------------------------------------------------------#
-param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_a=8, symp=NA, dt=0.001, use_K=FALSE)
+param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_a=8, 
+				symp=NA, allo = NA, dt=0.001, use_K=FALSE)
 {
 	sig = runif(reps, 0, max_sigma)
 	atry = runif(reps, 0, max_a)
 
 	for(i in 1:reps)
 	{
-		d = sim(tree=tree, a=atry[i], sigma=sig[i], dt=dt, ntraits=1, symp=symp)$tval
+		d = sim(tree=tree, a=atry[i], sigma=sig[i], dt=dt, ntraits=1, symp=symp, allo=allo)$tval
 		stats = summary_stats(tree=tree, data=d, use_K=use_K)
 	   	write(c(sig[i], atry[i], stats), file=file, append=TRUE, sep=",")
 	}
@@ -332,8 +336,8 @@ lrt_unnested   = function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, r
 	{
 		if(nullh=='EB')
 		{
-			# get transformed tree here
-			d = rTraitCont(transformed_tree, model='BM')
+			transformed_tree = transf.branch.lengths(tree, model='EB', parameters=list(rate=H0_est[2]))$tree
+			d = rTraitCont(transformed_tree, model='BM', sigma=H0_est[1])
 		} else if(nullh=='OU')
 		{
 			d = rTraitCont(tree, model='OU', sigma=H0_est[1], alpha=H0_est[2])
