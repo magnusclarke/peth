@@ -29,8 +29,18 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA)
 	if(all(is.na(symp)))
 	{
 		symp = replicate(num_tips^2, 0)
-		allo = replicate(num_tips^2, 9e9)
 	} else if(class(symp)=="matrix") {
+		symp = as.vector(symp)
+	}
+	
+	if(all(is.na(allo)))
+	{
+		allo = replicate(num_tips^2, 9e9)
+	} else if(class(allo)=="matrix") {
+		allo = as.vector(allo)
+	}
+	
+	else if(class(symp)=="matrix") {
 		symp = as.vector(symp)
 		allo = as.vector(allo)
 	}
