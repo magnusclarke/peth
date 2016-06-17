@@ -159,6 +159,8 @@ summary_stats = function(tree, data, use_K=FALSE)
 	difs[which(difs==0)] = NA				# Ignore matrix diagonal
 	gap	= apply(difs, 1, min, na.rm=T)	
 
+	data = matrix(data)
+
 	ntraits = length(data[1,])
 
 	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
