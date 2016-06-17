@@ -86,7 +86,10 @@ symp_matrix = function(tree, delay=0)
 	{
 		age[i+2] = sum(t$times[1:i])
 	}
-	# age = age[t$data_order]
+
+	# delay measured in terms of mean time between speciation events.
+	time_between_splits = mean(abs(diff(t$times)))
+	delay = delay * time_between_splits
 
 	# apply starttimes and delay to symp-matrix s
 	for (i in 1:ntip) 
