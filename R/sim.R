@@ -183,14 +183,14 @@ summary_stats = function(tree, data, use_K=FALSE)
 #-------- Generate file with many simulation parameters and summary statistics --------#
 #--------------------------------------------------------------------------------------#
 param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_a=8, 
-				symp=NA, allo = NA, dt=0.001, use_K=FALSE)
+				symp=NA, allo = NA, dt=0.001, use_K=FALSE, ntraits=1)
 {
 	sig = runif(reps, 0, max_sigma)
 	atry = runif(reps, 0, max_a)
 
 	for(i in 1:reps)
 	{
-		d = sim(tree=tree, a=atry[i], sigma=sig[i], dt=dt, ntraits=1, symp=symp, allo=allo)$tval
+		d = sim(tree=tree, a=atry[i], sigma=sig[i], dt=dt, ntraits=ntraits, symp=symp, allo=allo)$tval
 		stats = summary_stats(tree=tree, data=d, use_K=use_K)
 	   	write(c(sig[i], atry[i], stats), file=file, append=TRUE, sep=",")
 	}
