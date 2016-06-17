@@ -149,10 +149,17 @@ summary_stats = function(tree, data, use_K=FALSE)
 	difs[which(difs==0)] = NA				# Ignore matrix diagonal
 	gap	= apply(difs, 1, min, na.rm=T)	
 
+	ntraits = length(data[1,])
+
 	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
 	if(use_K)
 	{
-		k 	= tryCatch(Kcalc(data, tree, F), error=function(err){return(1)})
+		k = 1:ntraits
+		for (i in 1:ntraits) 
+		{
+			k[i] = tryCatch(Kcalc(data[,i], tree, F), error=function(err){return(1)})
+		}
+		k = mean(k)
 		stats = c(mean(gap), sd(gap), k)
 	} else {
 		stats = c(mean(gap), sd(gap) )
