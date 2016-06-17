@@ -159,7 +159,7 @@ summary_stats = function(tree, data, use_K=FALSE)
 	difs[which(difs==0)] = NA				# Ignore matrix diagonal
 	gap	= apply(difs, 1, min, na.rm=T)	
 
-	data = matrix(data)
+	data = as.matrix(data)
 
 	ntraits = length(data[1,])
 
