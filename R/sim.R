@@ -12,7 +12,7 @@ if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA)
+sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA, lim=NA)
 {
 	if(class(tree)=="phylo")
 	{
@@ -44,11 +44,17 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA)
 		symp = as.vector(symp)
 		allo = as.vector(allo)
 	}
+	
+	if(is.na(lim))
+	{
+		lim = 9e9
+	}
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
 				splitters=as.integer(splitting_nodes), tval = as.double(tval),
-				ntraits=as.integer(ntraits), symp=as.double(symp), allo=as.double(allo)
+				ntraits=as.integer(ntraits), symp=as.double(symp), allo=as.double(allo),
+				lim=as.numeric(lim)
 				)
 	
 	tval = result$tval
@@ -144,9 +150,9 @@ get_dif	= function(tree, data, a, sigma, dt=1, nTraits=1, use_K=FALSE, symp)
     {
 		dataK 	= tryCatch(Kcalc(data[,1], tree, F), error=function(err){return(1)})
 		newK 	= tryCatch(Kcalc(new[,1], tree, F), error=function(err){return(1)})
-		return( abs(mean(Dgap) - mean(Ngap)) * abs(sd(Dgap) - sd(Ngap)) * abs(dataK - newK))
+		return( (mean(Dgap) - mean(Ngap))^2 + (sd(Dgap) - sd(Ngap))^2 + (dataK - newK)^2 )
     } else {
-		return( abs(mean(Dgap) - mean(Ngap)) * abs(sd(Dgap) - sd(Ngap)))
+		return( (mean(Dgap) - mean(Ngap))^2 + (sd(Dgap) - sd(Ngap))^2 )
 	}
 }
 
@@ -222,9 +228,9 @@ lrt	= function(tree, data, file=NA, posteriorSize=500, use_K=FALSE, dt=0.001, ma
 	{
 		stat3 = x[,5]
 		tstat3 = tstat[3]
-		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) * abs(stat3 - tstat3)
+		diff = ((abs(stat1-tstat1))^2)  + ((abs(stat2-tstat2))^2) + ((abs(stat3 - tstat3))^2)
 	} else {
-		diff = abs(stat1-tstat1)  * abs(stat2-tstat2) 
+		diff = ((abs(stat1-tstat1))^2)  + ((abs(stat2-tstat2))^2)
 	}
 
     # Get simulations from nth smallest to smallest

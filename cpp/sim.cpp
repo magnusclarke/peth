@@ -62,6 +62,12 @@ void Sim::step_species(int &species)
 			}
 		}
 	}
+
+	for(int i=0; i < num_traits; ++i)	
+	{
+		if(tval[species][i] > limit) tval[species][i] = limit;
+		if(tval[species][i] < -limit) tval[species][i] = -limit;
+	}
 }
 
 /* 	Interaction between two species; updates trait values.  */
@@ -120,8 +126,11 @@ double Sim::pnorm(double q)
 
 /*  Copy all the parameters from R  */
 void Sim::set_values(double &r_dt, double &r_rate,double &r_a, 
-					double r_intervals[], Tree &t, int &nt, double symp[], double allo[])
+					double r_intervals[], Tree &t, int &nt, double symp[], double allo[], double &lim)
 {
+
+	limit = lim;
+
 	tree = t;
 	num_traits = nt;
 	num_segment = tree.num_tips-1;

@@ -17,6 +17,7 @@ class Sim
 	double dt;	
 	double a;
 	double rate; 						// BM sigma^2.
+	double limit;						// LIM
 	double time; 						// keep track of progression thru tree
 	double sumDist;						// Distance between two species in traitspace.
 	double sumSqDist;
@@ -49,7 +50,7 @@ public:
 	vector<vector<double>> tval;	
 
 	/*	Copy R's inputs into class data.  */
-	void set_values(double&, double&, double &a, double[], Tree&, int &nt, double[], double[]); 
+	void set_values(double&, double&, double &a, double[], Tree&, int &nt, double[], double[], double&); 
 
 	/*	Perform simulation on whole tree, modifying and lengthening tvals.  */
 	void path();		
