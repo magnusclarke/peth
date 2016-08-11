@@ -9,46 +9,51 @@ if(.Platform$pkgType == "mac.binary")	dyn.load("../cpp/Rfunc_mac.so")
 if(.Platform$pkgType == "source")		dyn.load("../cpp/Rfunc.so")
 
 #--------------------------------------------------------------------------------------#
+#--- Convert time-matrices of when species become sympatric/allopatric to vectors. ----#
+#--- If matrix is NA then all elements are set to constant number n. ------------------#
+#--------------------------------------------------------------------------------------#
+vectortime = function(s, t, n)
+{
+	if(all(is.na(s)))
+	{
+		s = replicate(n^2, t)
+	} else if(class(s)=="matrix") {
+		s = as.vector(s)
+	}
+	s
+}
+	
+#--------------------------------------------------------------------------------------#
+#----- Reorder a dataset to match the order of tips in an ape-format tree -------------#
+#--------------------------------------------------------------------------------------#
+reorder_data = function(t, d, n)
+{
+	rd = matrix(ncol=n, nrow=length(t$data_order ) )
+	for (i in 1:n) 
+	{
+		rd[,i] = d[seq(i, length(d), by=n)]
+		rd[,i] = rd[,i][t$data_order]
+	}
+	rd
+}
+
+#--------------------------------------------------------------------------------------#
 #--- Get a dataset simulated under BM + competition, for a given tree. ----------------#
 #--- Returns trait values for tips in order corresponding to ape tree tips. -----------#
 #--------------------------------------------------------------------------------------#
-sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA, lim=NA)
+sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA, lim=NA, ...)
 {
-	if(class(tree)=="phylo")
-	{
-		tree = ape2peth(tree)
-	} else if(class(tree)!="pethtree") {
-		stop("Tree incorrectly formatted.")
-	}
+	tree = checktree(tree)
 
 	num_tips = length(tree$data_order)
 	splitting_nodes = tree$splitting_nodes - 1 	# R counts from 1; c counts from 0.
 	times = tree$times
 	tval = rep(0, num_tips*ntraits)	
 
-	if(all(is.na(symp)))
-	{
-		symp = replicate(num_tips^2, 0)
-	} else if(class(symp)=="matrix") {
-		symp = as.vector(symp)
-	}
-	
-	if(all(is.na(allo)))
-	{
-		allo = replicate(num_tips^2, 9e9)
-	} else if(class(allo)=="matrix") {
-		allo = as.vector(allo)
-	}
-	
-	else if(class(symp)=="matrix") {
-		symp = as.vector(symp)
-		allo = as.vector(allo)
-	}
-	
-	if(is.na(lim))
-	{
-		lim = 9e9
-	}
+	symp = checksymp(symp, 0, num_tips)
+	allo = checksymp(allo, 99e9, num_tips )
+
+	if(is.na(lim))	lim = 9e99
 
 	result = .C ("pathsim", ntip=as.integer(num_tips), dt=as.double(dt), 
 				rate = as.double(sigma^2), a=as.double(a), r_intervals=as.double(times), 
@@ -56,37 +61,21 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA, lim=NA
 				ntraits=as.integer(ntraits), symp=as.double(symp), allo=as.double(allo),
 				lim=as.numeric(lim)
 				)
-	
-	tval = result$tval
 
-	ape_tval = matrix(ncol=ntraits, nrow=num_tips)
-	for (i in 1:ntraits) 
-	{
-		ape_tval[,i] = tval[seq(i, length(tval), by=ntraits)]
-		ape_tval[,i] = ape_tval[,i][tree$data_order]
-	}
-
-	result$tval = ape_tval
-
+	result$tval = reorder_data(t=tree, d=result$tval, n=ntraits)
 	result$symp = NULL
 	result$allo = NULL
 
-	return(result)
+	result
 }
 
 #--------------------------------------------------------------------------------------#
-#--- Generate a matrix of the times at which lineages come into sympatry. -------------#
+#--- Generate a matrix of the times at which lineages come into sympatry if -----------#
+#--- each new lineage starts interacting after a delay. -------------------------------#
 #--------------------------------------------------------------------------------------#
 symp_matrix = function(tree, delay=0)
 {
-	if(class(tree)=="phylo")
-	{
-		t = ape2peth(tree)
-	} else if(class(tree)!="pethtree") {
-		stop("Tree incorrectly formatted.")
-	} else {
-		t = tree
-	}
+	t = checktree(tree)
 
 	ntip = length(t$data_order)
 	s = matrix(nrow=ntip, ncol=ntip, 0)
@@ -119,7 +108,7 @@ symp_matrix = function(tree, delay=0)
 }
 
 #--------------------------------------------------------------------------------------#
-#---------- Generate vcv-matrix of simulated trees. -----------------------------------#
+#---------- Generate vcv-matrix from simulated trees. ---------------------------------#
 #--------------------------------------------------------------------------------------#
 as_vcv	= function(reps=1e4, ...)
 {
@@ -131,7 +120,7 @@ as_vcv	= function(reps=1e4, ...)
 #--------------------------------------------------------------------------------------#
 #-------- Get summary statistics for a given tree and dataset -------------------------#
 #--------------------------------------------------------------------------------------#
-summary_stats = function(tree, data, use_K=FALSE)
+summary_stats = function(tree, data, use_K=FALSE, ...)
 {
 	difs = as.matrix(dist(data))			# Euclidian distance
 	difs[which(difs==0)] = NA				# Ignore matrix diagonal
@@ -154,7 +143,7 @@ summary_stats = function(tree, data, use_K=FALSE)
 	} else {
 		stats = c(mean(gap), sd(gap) )
 	}
-	return( stats )
+	stats
 }
 
 #--------------------------------------------------------------------------------------#
@@ -229,6 +218,4 @@ lrt	= function(file=NA, posteriorSize=500, use_K=FALSE, sim_dat=NA, max_sigma=8,
 
 	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
 }
-
-#--------------------------------------------------------------------------------------#
 

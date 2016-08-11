@@ -126,5 +126,17 @@ ape2peth = function(tree)
 	return(ptree)
 }
 
+# convert ape to peth, or pass on peth tree, or return error if incorrect
+checktree = function(t)
+{
+	if(class(t)=="phylo")
+	{
+		t = ape2peth(t)
+    } else if(class(t)!="pethtree") {
+		stop("Tree incorrectly formatted.")
+	}
+    t
+}
+
 # legacy functions
 rUMT = rand_umt

@@ -28,11 +28,11 @@ check_dist = function(dat, kernel){
         cat('Error: distribution too non-normal!\n')
     }
 }
-tre = rand_umt(1000)
+tre = rand_umt(100)
 ptre = ape2peth(tre)
-datBM = genTree(ptre)$traits
-datCOMP = genTree(ptre, a=0, kernel='CE')$traits
-datLIM = genTree(ptre, a=2, kernel='LIM')$traits
+datBM = sim(ptre)$tval
+datCOMP = sim(ptre, a=1)$tval
+datLIM = sim(ptre, a=2, lim=2)$tval
 check_dist(datBM, 'BM')
 check_dist(datCOMP, 'Competition')
 check_dist(datLIM, 'Bounded competition')
@@ -42,8 +42,8 @@ check_dist(datLIM, 'Bounded competition')
 cat('Checking trait data dimensionality... ')
 tre = rand_umt(5)
 ptre = ape2peth(tre)
-dat = genTree(ptre, nTraits=3)
-dat2 = genTree(ptre, a=5, nTraits=6)
+dat = sim(ptre, ntraits=3)$tval
+dat2 = sim(ptre, a=5, ntraits=6)$tval
 if( length(dat[1,])==3 && length(dat2[1,])==6)
 {
     cat('OK\n')
@@ -58,7 +58,7 @@ tre=0;dat=0
 load('test.tre')
 load('test.dat')
 ptre = ape2peth(tre)
-testvcv = asVCV(ptre)
+testvcv = as_vcv(tree=ptre, reps=1e3)
 distance = sum(abs(vcv - testvcv))
 if(distance < 0){
     cat('Error: negative difference between vcv matrices!\n')
@@ -69,7 +69,7 @@ if(distance < 0){
 }
 
 cat('Checking VCV matrix with competition... ')
-compvcv = asVCV(ptre, a=2)
+compvcv = as_vcv(tree=ptre, a=2, reps=1e3)
 sumvcv = sum(abs(vcv))
 sumcompvcv = sum(abs(compvcv))
 if(sumcompvcv - sumvcv > 6) 
@@ -83,7 +83,7 @@ if(sumcompvcv - sumvcv > 6)
 #----------- See if LRT results are sensible ---------------------#
 tre = rUMT(20)
 ptre = ape2peth(tre)
-dat = genTree(ptre)
+dat = sim(ptre)$tval
 test_lrt = function(lrt1){
     if(any(is.na(lrt1)))
     {
@@ -95,10 +95,12 @@ test_lrt = function(lrt1){
     }
 }
 cat('Checking whether std LRT results are sensible... ')
-lrt1 = LRT(ptre, dat, sstat='std', reps=1e2, posteriorSize=50); file.remove('sample.out')
+param_stats(ptre, file='sample.out', reps=1e2, use_K=FALSE)
+lrt1 = lrt(file='sample.out', tree=ptre, data=dat, reps=1e2, posteriorSize=50); file.remove('sample.out')
 test_lrt(lrt1)
 cat('Checking whether LRT results with signal (K) are sensible... ')
-lrt2 = LRT(ptre, dat, sstat='K', reps=1e2, posteriorSize=50); file.remove('sample.out')
+param_stats(ptre, file='sample.out', reps=1e2, use_K=FALSE)
+lrt2 = lrt(file='sample.out', tree=ptre, data=dat, reps=1e2, posteriorSize=50); file.remove('sample.out')
 test_lrt(lrt2)
 #-----------------------------------------------------------------#
 
@@ -107,13 +109,13 @@ tre = 0
 load('test.tre')
 ptre = ape2peth(tre)
 cat('\nTiming a thousand simulations - small tree (par time 0.57s)...\n\t')
-t = system.time(replicate(1e3, genTree(ptre, a=1)))
+t = system.time(replicate(1e3, sim(ptre, a=1)))
 cat(t[1])
 cat(' seconds\n')
 load('test_large.tre')
 ptre = ape2peth(tre)
-cat('\nTiming a thousand simulations - large tree (par time 1.65s)...\n\t')
-t = system.time(replicate(1e3, genTree(ptre, a=1)))
-cat(t[1])
-cat(' seconds\n')
+#cat('\nTiming a thousand simulations - large tree (par time 1.65s)...\n\t')
+#t = system.time(replicate(1e3, sim(ptre, a=1)))
+#cat(t[1])
+#cat(' seconds\n')
 #-----------------------------------------------------------------#
