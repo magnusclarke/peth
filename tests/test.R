@@ -81,7 +81,7 @@ if(sumcompvcv - sumvcv > 6)
 #-----------------------------------------------------------------#
 
 #----------- See if LRT results are sensible ---------------------#
-tre = rUMT(20)
+tre = rand_umt(20)
 ptre = ape2peth(tre)
 dat = sim(ptre)$tval
 test_lrt = function(lrt1){

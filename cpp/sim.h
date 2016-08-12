@@ -17,7 +17,7 @@ class Sim
 	double dt;	
 	double a;
 	double rate; 						// BM sigma^2.
-	double limit;						// LIM
+	double limit;						// trait value limits
 	double time; 						// keep track of progression thru tree
 	double sumDist;						// Distance between two species in traitspace.
 	double sumSqDist;
