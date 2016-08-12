@@ -160,7 +160,9 @@ param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_
 	}
 }
 
-# get sum of squared distances between summary stats. s1 has many rows, s2 only 1.
+#--------------------------------------------------------------------------------------#
+#-- Get sum of squared distances between summary stats. s1 has many rows, s2 only 1. --#
+#--------------------------------------------------------------------------------------#
 sdiff = function(s1, s2)
 {
 	colSums(abs(t(s1) - s2)^2)	

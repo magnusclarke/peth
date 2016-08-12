@@ -6,10 +6,12 @@
 library(ape)
 library(TESS)
 
-# random ultrametric tree
+#--------------------------------------------------------------------------------------#
+#---- Random ultrametric tree ---------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 rand_umt	= function(nt, lambda=1, mu=0, max=1e5)
 {
-	# TESS versions 1 and 2 have different unction names and parameters.
+	# TESS versions 1 and 2 have different function names and parameters.
 	if(unlist (packageVersion('TESS'))[1] == 1)
 	{
 		tree = sim.globalBiDe.taxa(n=1, nTaxa=nt, lambda=lambda, mu=mu)
@@ -19,8 +21,9 @@ rand_umt	= function(nt, lambda=1, mu=0, max=1e5)
 	return( tree[[1]] )
 }
 
-
-# Constructor for peth tree class
+#--------------------------------------------------------------------------------------#
+#---- Constructor for peth tree class. ------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 pethtree = function(map, dord, nts, tts) 
 {
 	out = list(map, dord, nts, tts)
@@ -29,8 +32,10 @@ pethtree = function(map, dord, nts, tts)
 	invisible(out)
 }
 
-# Convert a tree in ape format to one in new format (return a new 'peth' tree object).
-# Only works for ntip > 4.
+#--------------------------------------------------------------------------------------#
+# Convert a tree in ape format to one in new format (return a new 'peth' tree object). #
+# Only works for ntip > 4. ------------------------------------------------------------#
+#--------------------------------------------------------------------------------------#
 ape2peth = function(tree)
 {
 	edge = tree$edge
@@ -62,6 +67,7 @@ ape2peth = function(tree)
 	# Produce vector of times between speciation events
 	tts = c()
 
+	# Loop over speciation events
 	for(i in seq(2,2*(ntip-1), by=2))
 	{
 		# 'splitting' is the splitting node in ape format
@@ -124,7 +130,9 @@ ape2peth = function(tree)
 	return(ptree)
 }
 
-# convert ape to peth, or pass on peth tree, or return error if incorrect
+#--------------------------------------------------------------------------------------#
+# ---- Convert ape to peth, or pass on peth tree, or return error if incorrect. -------#
+#--------------------------------------------------------------------------------------#
 checktree = function(t)
 {
 	if(class(t)=="phylo")
