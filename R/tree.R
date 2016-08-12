@@ -1,7 +1,7 @@
 # Functions for converting ape-format phyogenies to
 # 'peth': a format better suited for time-forward simulation.
 # magnusclarke@gmail.com
-# modified 2015
+# modified 2016
 
 library(ape)
 library(TESS)
@@ -50,8 +50,6 @@ ape2peth = function(tree)
 
 	# splitting gives the NODE, as labelled in edge, which is speciating
 	splitting = root
-	# splitting_row = 1		# row of map that is splitting
-	# running[ which(edge[,1]==root) ] = TRUE
 
 	edge_counter = 1
 
@@ -138,5 +136,3 @@ checktree = function(t)
     t
 }
 
-# legacy functions
-rUMT = rand_umt

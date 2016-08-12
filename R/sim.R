@@ -50,8 +50,8 @@ sim = function(tree, dt=0.001, sigma=1, a=0, ntraits=1, symp=NA, allo=NA, lim=NA
 	times = tree$times
 	tval = rep(0, num_tips*ntraits)	
 
-	symp = checksymp(symp, 0, num_tips)
-	allo = checksymp(allo, 99e9, num_tips )
+	symp = vectortime(symp, 0, num_tips)
+	allo = vectortime(allo, 99e9, num_tips )
 
 	if(is.na(lim))	lim = 9e99
 
@@ -113,8 +113,8 @@ symp_matrix = function(tree, delay=0)
 as_vcv	= function(reps=1e4, ...)
 {
 	args = as.list(substitute(list(...)))[-1L]
-	x	= t( replicate(reps, do.call(sim, args)$tval, simplify='matrix') )
-	return( cov(x) )
+	x = t( replicate(reps, do.call(sim, args)$tval, simplify='matrix') )
+	cov(x)
 }
 
 #--------------------------------------------------------------------------------------#
@@ -131,6 +131,7 @@ summary_stats = function(tree, data, use_K=FALSE, ...)
 	ntraits = length(data[1,])
 
 	# Summary statistics: mean and sd of gaps between neighbours. Plus Blomberg's K optionally.
+	k = c()
 	if(use_K)
 	{
 		k = 1:ntraits
@@ -139,11 +140,8 @@ summary_stats = function(tree, data, use_K=FALSE, ...)
 			k[i] = tryCatch(Kcalc(data[,i], tree, F), error=function(err){return(1)})
 		}
 		k = mean(k)
-		stats = c(mean(gap), sd(gap), k)
-	} else {
-		stats = c(mean(gap), sd(gap) )
 	}
-	stats
+	c(mean(gap), sd(gap), k)
 }
 
 #--------------------------------------------------------------------------------------#
@@ -162,38 +160,28 @@ param_stats = function(tree, file='param_stats.out', reps=1e3, max_sigma=8, max_
 	}
 }
 
+# get sum of squared distances between summary stats. s1 has many rows, s2 only 1.
+sdiff = function(s1, s2)
+{
+	colSums(abs(t(s1) - s2)^2)	
+}
+
 #--------------------------------------------------------------------------------------#
 #---------- Likelihood ratio: BM versus competition -----------------------------------#
 #--------------------------------------------------------------------------------------#
-lrt	= function(file=NA, posteriorSize=500, use_K=FALSE, sim_dat=NA, max_sigma=8, max_a=8, ...)
+lrt	= function(file, posteriorSize=500, use_K=FALSE, max_sigma=8, max_a=8, ...)
 {
    	# Read simulations into R
-	if(is.na(sim_dat))
-	{
-		x 	= read.csv(file)
-	} else {
-		x = sim_dat
-	}
+	x 	= read.csv(file)
    	sig = x[,1]
    	atry = x[,2]
-   	stat1 = x[,3]
-   	stat2 = x[,4]
+	sstat = x[, -(1:2)]
 
-	# Get summary stats for the true data
+	# Get summary stats for the true data, and distance to sims
 	tstat = summary_stats(use_K=use_K, ...)
-	tstat1 = tstat[1]
-	tstat2 = tstat[2]
+	diff = sdiff(sstat, tstat)
 
-	if(use_K)
-	{
-		stat3 = x[,5]
-		tstat3 = tstat[3]
-		diff = ((abs(stat1-tstat1))^2)  + ((abs(stat2-tstat2))^2) + ((abs(stat3 - tstat3))^2)
-	} else {
-		diff = ((abs(stat1-tstat1))^2)  + ((abs(stat2-tstat2))^2)
-	}
-
-    # Get simulations from nth smallest to smallest
+    # Get simulations from nth closest to closest 
     H1_post		= order(diff)[1:posteriorSize]
 
     Usig		= sig[H1_post]
@@ -216,6 +204,6 @@ lrt	= function(file=NA, posteriorSize=500, use_K=FALSE, sim_dat=NA, max_sigma=8,
 
 	LRT				= -2 * log( H0_lik / H1_lik )
 
-	return( data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT) )
+	data.frame(H0_est, H0_lik, H1_est, H1_lik, LRT)
 }
 
